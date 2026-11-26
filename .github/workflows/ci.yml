@@ -1,0 +1,87 @@
+name: CI
+
+on:
+  push:
+    branches: ["**"]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  DOTNET_CLI_TELEMETRY_OPTOUT: "1"
+  DOTNET_NOLOGO: "1"
+  DOTNET_SKIP_FIRST_TIME_EXPERIENCE: "1"
+
+jobs:
+  build-test:
+    name: Build y pruebas (${{ matrix.os }})
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "10.0.x"
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Dependencias Python de interoperabilidad
+        run: python -m pip install -r tests/interop/requirements.txt
+
+      - name: Herramientas locales (dotnet-ef)
+        run: dotnet tool restore
+
+      - name: Restaurar
+        run: dotnet restore CentroCiber.slnx
+
+      - name: Compilar (advertencias = errores)
+        run: dotnet build CentroCiber.slnx -c Release --no-restore -warnaserror
+
+      - name: Pruebas .NET (incluye puente de interoperabilidad con Python)
+        run: dotnet test CentroCiber.slnx -c Release --no-build --logger "trx;LogFilePrefix=results" --results-directory TestResults
+
+      - name: Pruebas de interoperabilidad (pytest) sobre los vectores publicados
+        run: python -m pytest tests/interop -q
+
+      - name: Resultados de pruebas
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results-${{ matrix.os }}
+          path: TestResults
+
+  publish:
+    name: Publicación autocontenida (${{ matrix.rid }})
+    needs: build-test
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - rid: linux-x64
+            os: ubuntu-latest
+          - rid: win-x64
+            os: windows-latest
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "10.0.x"
+
+      - name: Publicar
+        run: dotnet publish src/CentroCiber.Web/CentroCiber.Web.csproj -c Release -r ${{ matrix.rid }} --self-contained true -p:PublishSingleFile=false -o publish/${{ matrix.rid }}
+
+      - name: Subir artefacto
+        uses: actions/upload-artifact@v4
+        with:
+          name: centrociber-eq08-${{ matrix.rid }}
+          path: publish/${{ matrix.rid }}
