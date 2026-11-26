@@ -70,12 +70,3 @@ public static class InteropFixtures
         File.WriteAllText(Path.Combine(dir, name), content, new UTF8Encoding(false));
 }
 
-/// <summary>Paquetes de ejemplo para interoperabilidad (se completa en la fase 4).</summary>
-public static partial class PackageFixtures
-{
-    public static IEnumerable<(string Name, byte[] Bytes)> Build(NodeIdentity identity)
-    {
-        _ = identity;
-        return [];
-    }
-}
