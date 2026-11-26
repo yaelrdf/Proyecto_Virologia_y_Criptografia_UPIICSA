@@ -37,10 +37,10 @@ Estados: ⬜ Pendiente · 🟨 En curso · ✅ Hecha (verificada en Linux) · �
 
 | ID | Historia | Prueba de aceptación | Estándar | Estado |
 | --- | --- | --- | --- | --- |
-| H4.1 | Manifiesto y constructor `package`/`result` con nomenclatura | Nombre `EQ08_HASHSHA_..._XXXXXXXX.zip` y `RES_...` | §9.1, §9.2, §9.5 | ⬜ |
-| H4.2 | Contenido `multipart` (zip interno, `parts`) | Ida y vuelta + parte alterada → `E-HASH` | §9.4 | ⬜ |
-| H4.3 | Reenvío con re-firma | Conserva `datos.enc`, `producerNode`; nuevo `packetId` | §9.6 | ⬜ |
-| H4.4 | Las 14 validaciones de recepción en orden | Una prueba por código (incl. zip-slip, zip-bomb, 4 archivos, timestamp viejo, `packetId` repetido) | §13.1 | ⬜ |
+| H4.1 | Manifiesto y constructor `package`/`result` con nomenclatura | Nombre `EQ08_HASHSHA_..._XXXXXXXX.zip` y `RES_...` | §9.1, §9.2, §9.5 | ✅ |
+| H4.2 | Contenido `multipart` (zip interno, `parts`) | Ida y vuelta + parte alterada → `E-HASH` | §9.4 | ✅ |
+| H4.3 | Reenvío con re-firma | Conserva `datos.enc`, `producerNode`; nuevo `packetId` | §9.6 | ✅ |
+| H4.4 | Las 14 validaciones de recepción en orden | Una prueba por código (incl. zip-slip, zip-bomb, 4 archivos, timestamp viejo, `packetId` repetido) | §13.1 | ✅ |
 
 ## E5 — API de proveedor
 

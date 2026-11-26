@@ -4,6 +4,17 @@ Todos los cambios relevantes del nodo EQ08 se documentan aquí. El formato sigue
 
 ## [Sin publicar]
 
+### Fase 4 — Paquetes v2.0
+
+#### Agregado
+
+- Constructor de paquetes `package` y `result` con manifiesto v2.0 completo, firma de la cadena §8.4 y nomenclatura `EQ08_...` / `RES_EQ08_...` (§9.2).
+- Contenido `multipart` con zip interno `part-NN.bin` y arreglo `parts` (§9.4).
+- Reenvío con re-firma (§9.6).
+- Validador con las 14 comprobaciones de §13.1 en orden, más `E-CERT-UNTRUSTED` para remitentes fijados, con reporte paso a paso para la interfaz. Hay una prueba por cada código (incluye zip-slip, zip-bomb, 4 archivos, timestamp viejo y futuro, y `packetId` repetido).
+- Los datos de `datos.enc` y `resultado.enc` se guardan sin comprimir para que nunca superen la razón 100:1.
+- Paquetes `package`, `result` y `multipart` de .NET verificados por Python.
+
 ### Fase 3 — Algoritmos propios
 
 #### Agregado
