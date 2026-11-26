@@ -78,6 +78,8 @@ public static class NodeHost
         builder.Services.AddProtocolApi();
         if (options.EnableUi)
         {
+            // Permite servir wwwroot y los recursos de Blazor también al ejecutar desde bin/ fuera de Development.
+            builder.WebHost.UseStaticWebAssets();
             builder.Services.AddRazorComponents().AddInteractiveServerComponents();
         }
 
