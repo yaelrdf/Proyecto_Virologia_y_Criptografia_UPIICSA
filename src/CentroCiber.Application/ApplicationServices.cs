@@ -29,6 +29,17 @@ public static class ApplicationServices
         services.AddSingleton<CryptoRequestHandler>();
         services.AddSingleton<PackageLibrary>();
         services.AddSingleton<InboxService>();
+        services.AddSingleton<Infrastructure.Http.NodeHttpClientFactory>();
+        services.AddSingleton(sp => new Discovery.SubnetScanner(sp.GetRequiredService<Infrastructure.Http.NodeHttpClientFactory>().CreatePlain()));
+        services.AddSingleton<DiscoveryPeer>();
+        services.AddSingleton<Discovery.IBeaconPeer>(sp => sp.GetRequiredService<DiscoveryPeer>());
+        var d = context.Options.Discovery;
+        var targets = d.Targets.Select(t => System.Net.IPEndPoint.Parse(t)).ToList();
+        var advertised = string.IsNullOrWhiteSpace(context.Options.AdvertisedIp) ? null : System.Net.IPAddress.Parse(context.Options.AdvertisedIp);
+        services.AddSingleton(new Discovery.BeaconSettings(d.Enabled, d.ListenPort, targets, TimeSpan.FromSeconds(d.IntervalSeconds), advertised));
+        services.AddSingleton<Discovery.BeaconService>();
+        services.AddHostedService(sp => sp.GetRequiredService<Discovery.BeaconService>());
+        services.AddHostedService<NodeMonitorService>();
         return services;
     }
 }
