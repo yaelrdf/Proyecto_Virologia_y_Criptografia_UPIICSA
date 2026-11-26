@@ -31,6 +31,7 @@ public static class ApplicationServices
         services.AddSingleton<InboxService>();
         services.AddSingleton<RemoteAlgorithmProvider>();
         services.AddSingleton<OperationsService>();
+        services.AddSingleton<ProfileCatalog>();
         services.AddSingleton<Infrastructure.Http.NodeHttpClientFactory>();
         services.AddSingleton(sp => new Discovery.SubnetScanner(sp.GetRequiredService<Infrastructure.Http.NodeHttpClientFactory>().CreatePlain()));
         services.AddSingleton<DiscoveryPeer>();
