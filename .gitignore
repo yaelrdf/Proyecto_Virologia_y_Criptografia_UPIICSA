@@ -69,3 +69,22 @@ secrets*.json
 .env.*
 # Los vectores de prueba públicos sí se versionan
 !vectores/**
+
+# --- Nodo EQ08: secretos, datos y paquetes recibidos (nunca al repositorio) ---
+*.pfx
+*.p12
+*.db
+*.db-*
+*.db-shm
+*.db-wal
+data/
+storage/
+secrets*.json
+.env
+.env.*
+__pycache__/
+.pytest_cache/
+*.pyc
+publish/
+# Los vectores públicos de prueba (llave marcada PRUEBA) sí se versionan
+!vectores/**
