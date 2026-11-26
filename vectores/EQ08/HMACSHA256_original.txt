@@ -1,0 +1,1 @@
+Vector de prueba HMACSHA256 del Equipo 8 — clave de PRUEBA 000102…1F.
