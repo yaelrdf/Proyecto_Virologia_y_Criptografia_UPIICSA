@@ -63,6 +63,9 @@ public sealed record OperationResult
     /// <summary><c>jobId</c> remoto cuando el proveedor respondió <c>202</c>.</summary>
     public string? PendingJobId { get; init; }
 
+    /// <summary><c>requestId</c> de la petición pendiente (para consultar el trabajo después).</summary>
+    public string? PendingRequestId { get; init; }
+
     public string? ProviderNode { get; init; }
 
     public bool IsPending => PendingJobId is not null;
