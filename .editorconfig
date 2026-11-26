@@ -69,3 +69,8 @@ dotnet_diagnostic.IDE0005.severity = suggestion
 dotnet_diagnostic.CA2201.severity = none
 dotnet_diagnostic.CA1063.severity = none
 dotnet_diagnostic.CA1816.severity = none
+
+[**/Migrations/*.cs]
+generated_code = true
+dotnet_analyzer_diagnostic.severity = none
+csharp_style_namespace_declarations = block_scoped:none
