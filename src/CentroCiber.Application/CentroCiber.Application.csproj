@@ -1,0 +1,12 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <ItemGroup>
+    <FrameworkReference Include="Microsoft.AspNetCore.App" />
+    <ProjectReference Include="..\CentroCiber.Crypto\CentroCiber.Crypto.csproj" />
+    <ProjectReference Include="..\CentroCiber.Packaging\CentroCiber.Packaging.csproj" />
+    <ProjectReference Include="..\CentroCiber.Discovery\CentroCiber.Discovery.csproj" />
+    <ProjectReference Include="..\CentroCiber.Infrastructure\CentroCiber.Infrastructure.csproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <InternalsVisibleTo Include="CentroCiber.Api.Tests" />
+  </ItemGroup>
+</Project>
