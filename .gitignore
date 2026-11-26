@@ -55,3 +55,17 @@ CodeCoverage/
 *.VisualState.xml
 TestResult.xml
 nunit-*.xml
+
+# --- EQ08: secretos y datos locales (nunca subir) ---
+*.pfx
+*.p12
+*.db
+*.db-shm
+*.db-wal
+data/
+storage/
+secrets*.json
+.env
+.env.*
+# Los vectores de prueba públicos sí se versionan
+!vectores/**
