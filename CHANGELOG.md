@@ -4,6 +4,19 @@ Todos los cambios relevantes del nodo EQ08 se documentan aquí. El formato sigue
 
 ## [Sin publicar]
 
+### Fase 5 — API de proveedor
+
+#### Agregado
+
+- Endpoints `GET /api/status`, `/api/certificate`, `/api/algorithms`, `/api/keys/{keyId}` (siempre `E-KEY-NOT-FOUND`), `POST /api/requests/receive`, `/api/crypto/forward`, `/api/crypto/inverse`, `GET /api/jobs/{jobId}` y `/result`.
+- Validación de peticiones `/api/crypto/*` con los 8 pasos de §13.2; resultados de `inverse` cifrados con `CC-ENV-1` para el solicitante.
+- Errores `application/problem+json` con los 29 códigos del Anexo B; encabezados `X-CC-Node` y `X-CC-Protocol` en las respuestas.
+- Cola de trabajos (tope síncrono de 30 s configurable, `202` con `jobId`, retención de 1 h, descarga solo para el solicitante).
+- HTTPS en `5100 + teamNumber` con el certificado de identidad.
+- Límite de 10 peticiones `/api/crypto/*` simultáneas (`E-BUSY`) y `acceptingPackages` desde Ajustes.
+- Documento OpenAPI en `docs/api/openapi.json`, con una prueba que avisa si queda desactualizado.
+- ADR 0001–0013 con las decisiones e interpretaciones del estándar.
+
 ### Fase 4 — Paquetes v2.0
 
 #### Agregado

@@ -46,14 +46,14 @@ Estados: ⬜ Pendiente · 🟨 En curso · ✅ Hecha (verificada en Linux) · �
 
 | ID | Historia | Prueba de aceptación | Estándar | Estado |
 | --- | --- | --- | --- | --- |
-| H5.1 | `GET /api/status`, `/api/certificate`, `/api/algorithms` | Pruebas de API | §10.3, §10.4 | ⬜ |
-| H5.2 | Errores `problem+json` con el catálogo del Anexo B y encabezados `X-CC-*` | Prueba del catálogo de 29 códigos | §10.1, §14, Anexo B | ⬜ |
-| H5.3 | `POST /api/requests/receive` (bandeja) | `202` + `Pendiente`; errores de §13.1 por API | §10.5, §15 | ⬜ |
-| H5.4 | `POST /api/crypto/forward` e `inverse` con las 8 validaciones de §13.2 | `forward`/`inverse` de ambos algoritmos; cada código de §13.2 | §10.6, §13.2 | ⬜ |
-| H5.5 | Cola de trabajos (`202`, `jobs/{id}`, `/result`, retención 1 h) | Prueba con tope síncrono 0 s | §10.6, §10.7 | ⬜ |
-| H5.6 | HTTPS en 5108 con el certificado de identidad | Cliente con huella fijada | §5.2 | ⬜ |
-| H5.7 | Documento OpenAPI en `docs/api/openapi.json` | Prueba de que el archivo está al día | §10 | ⬜ |
-| H5.8 | Límite de 10 peticiones `/api/crypto/*` simultáneas → `E-BUSY` | Prueba del limitador | §13.3 | ⬜ |
+| H5.1 | `GET /api/status`, `/api/certificate`, `/api/algorithms` | Pruebas de API | §10.3, §10.4 | ✅ |
+| H5.2 | Errores `problem+json` con el catálogo del Anexo B y encabezados `X-CC-*` | Prueba del catálogo de 29 códigos | §10.1, §14, Anexo B | ✅ |
+| H5.3 | `POST /api/requests/receive` (bandeja) | `202` + `Pendiente`; errores de §13.1 por API | §10.5, §15 | ✅ |
+| H5.4 | `POST /api/crypto/forward` e `inverse` con las 8 validaciones de §13.2 | `forward`/`inverse` de ambos algoritmos; cada código de §13.2 | §10.6, §13.2 | ✅ |
+| H5.5 | Cola de trabajos (`202`, `jobs/{id}`, `/result`, retención 1 h) | Prueba con tope síncrono 0 s | §10.6, §10.7 | ✅ |
+| H5.6 | HTTPS en 5108 con el certificado de identidad | Cliente con huella fijada | §5.2 | ✅ |
+| H5.7 | Documento OpenAPI en `docs/api/openapi.json` | Prueba de que el archivo está al día | §10 | ✅ |
+| H5.8 | Límite de 10 peticiones `/api/crypto/*` simultáneas → `E-BUSY` | Prueba del limitador | §13.3 | ✅ |
 
 ## E6 — Descubrimiento y directorio
 
@@ -103,4 +103,21 @@ Estados: ⬜ Pendiente · 🟨 En curso · ✅ Hecha (verificada en Linux) · �
 
 ## Pendientes e interpretaciones
 
-Se completa conforme se registran ADRs en [`docs/arquitectura/decisiones/`](../arquitectura/decisiones/).
+Interpretaciones del estándar registradas como ADR en [`docs/arquitectura/decisiones/`](../arquitectura/decisiones/). Las marcadas **Propuesta** requieren aprobación del equipo y, de ser posible, del coordinador del estándar (§17).
+
+| Tema | Decisión de EQ08 | ADR | Estado |
+| --- | --- | --- | --- |
+| Validaciones #13/#14 en `inverse` | Se aplican a la petición (`timestampUtc`, `requestId`), no al paquete embebido | [0005](../arquitectura/decisiones/0005-inverse-timestamp-replay.md) | Propuesta |
+| Solicitante sin huella fijada | Se acepta y se registra como pendiente de confirmar (TOFU) | [0006](../arquitectura/decisiones/0006-unpinned-requester.md) | Propuesta |
+| `publicParameters` de un `result` | `{}`, como en el Anexo A.2 | [0007](../arquitectura/decisiones/0007-result-public-parameters.md) | Propuesta |
+| `valid: false` | `200` con `verification`, nunca `E-VERIFY-FAILED` | [0008](../arquitectura/decisiones/0008-verify-failed.md) | Aceptada |
+| Resultado de trabajo pedido por otro nodo / `targetNode` ajeno | `404 E-JOB-NOT-FOUND` / `400 E-REQUEST` | [0011](../arquitectura/decisiones/0011-job-result-access.md) | Propuesta |
+| Variantes SHA-3 y HMAC-SHA512 | No se ofrecen; `E-PARAMS` | [0013](../arquitectura/decisiones/0013-hmac-variants.md) | Aceptada |
+
+Pendientes que dependen de otros equipos (plan §7):
+
+- [ ] Equipo 4 confirma `DIFFIEHELLMAN` y `CAESAR`.
+- [ ] Cada equipo publica su perfil `/api/algorithms` y sus vectores `vectores/EQNN/`.
+- [ ] Coordinador, repositorio compartido y fecha de congelamiento del estándar.
+- [ ] Red de la prueba integrada (¿permite broadcast?).
+- [ ] ¿Los 30 registros pueden ser semilla o deben venir de intercambios reales?
