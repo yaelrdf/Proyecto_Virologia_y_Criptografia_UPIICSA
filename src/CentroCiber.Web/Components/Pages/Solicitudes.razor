@@ -1,0 +1,72 @@
+@page "/solicitudes"
+@implements IDisposable
+@inject InboxService Inbox
+@inject NotificationHub Hub
+
+<PageTitle>Solicitudes · Atalaya</PageTitle>
+<h1>Solicitudes</h1>
+<p class="subtitulo">Paquetes recibidos en <code>POST /api/requests/receive</code>. Al aceptarlos pasan a Consultas con origen «Recibido».</p>
+
+@if (message is not null)
+{
+    <div class="alerta @(messageOk ? "ok" : "error")">@message</div>
+}
+<InboxTable Items="items" OnAccept="AcceptAsync" OnReject="RejectAsync" />
+
+@code {
+    private IReadOnlyList<InboxRequestEntity> items = [];
+    private string? message;
+    private bool messageOk;
+
+    protected override async Task OnInitializedAsync()
+    {
+        Hub.Published += OnEvent;
+        await LoadAsync();
+    }
+
+    private async Task LoadAsync() => items = await Inbox.ListAsync();
+
+    private void OnEvent(NodeEvent e)
+    {
+        if (e.Kind == NodeEventKind.InboxReceived)
+        {
+            _ = InvokeAsync(async () =>
+            {
+                await LoadAsync();
+                StateHasChanged();
+            });
+        }
+    }
+
+    private async Task AcceptAsync(InboxRequestEntity r)
+    {
+        try
+        {
+            var stored = await Inbox.AcceptAsync(r.Id);
+            (message, messageOk) = ($"Aceptada. {stored.FileName} está en Consultas.", true);
+        }
+        catch (InvalidOperationException ex)
+        {
+            (message, messageOk) = (ex.Message, false);
+        }
+
+        await LoadAsync();
+    }
+
+    private async Task RejectAsync(InboxRequestEntity r)
+    {
+        try
+        {
+            await Inbox.RejectAsync(r.Id);
+            (message, messageOk) = ("Rechazada; el zip se descartó.", true);
+        }
+        catch (InvalidOperationException ex)
+        {
+            (message, messageOk) = (ex.Message, false);
+        }
+
+        await LoadAsync();
+    }
+
+    public void Dispose() => Hub.Published -= OnEvent;
+}
