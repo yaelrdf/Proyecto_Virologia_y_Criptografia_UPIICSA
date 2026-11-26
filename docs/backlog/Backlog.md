@@ -64,6 +64,7 @@ Estados: ⬜ Pendiente · 🟨 En curso · ✅ Hecha (verificada en Linux) · �
 | H6.3 | Alta manual, TOFU y alerta de cambio de huella | Pruebas del directorio | §6.3, §6.4 | ✅ |
 | H6.4 | Estado `offline` a los 90 s | Prueba con reloj simulado | §6.1 | ✅ |
 | H6.5 | Dos instancias se descubren en loopback; scripts `run-two-nodes` | Prueba de integración con dos hosts | §6 | ✅ |
+| H6.6 | Descubrimiento entre una laptop Windows y una Linux en LAN real (plan §6, fase 6) | Prueba manual del equipo | §6 | 🖐 |
 
 ## E7 — Cliente de delegación
 
@@ -75,6 +76,7 @@ Estados: ⬜ Pendiente · 🟨 En curso · ✅ Hecha (verificada en Linux) · �
 | H7.4 | Manejo de `202` y consulta de `jobId`; errores `problem+json` | `MockNode` en modo asíncrono | §10.7 | ✅ |
 | H7.5 | `keyRef` y reenvío a bandeja ajena | Reenvío a un segundo nodo | §9.6, §11.3, §12 | ✅ |
 | H7.6 | `MockNode` (EQ01/AESGCM) en pruebas y como herramienta | `dotnet run --project tools/CentroCiber.MockNode` | §16 | ✅ |
+| H7.7 | Delegar al menos un algoritmo real de cada equipo (plan §6, fase 7) | Prueba integrada; se anota en la matriz | §16.2 | 🖐 |
 
 ## E8 — Interfaz web
 
@@ -95,12 +97,24 @@ Estados: ⬜ Pendiente · 🟨 En curso · ✅ Hecha (verificada en Linux) · �
 
 | ID | Historia | Prueba de aceptación | Estándar | Estado |
 | --- | --- | --- | --- | --- |
-| H9.1 | Vectores `vectores/EQ08/` completos | `verify_package.py` sobre cada zip | §16.1 | ⬜ |
-| H9.2 | Lista de conformidad §16.2 con evidencia | Documento | §16.2 | ⬜ |
-| H9.3 | Matriz de interoperabilidad inicial | `docs/interoperabilidad/Matriz.md` | §16.3 | ⬜ |
-| H9.4 | Scripts de firewall y publicación | Revisión de scripts | §5.1 | ⬜ |
-| H9.5 | Documentación completa en español | Enlaces desde el README | — | ⬜ |
-| H9.6 | Recorrido de punta a punta con dos nodos | Prueba de integración | §11 | ⬜ |
+| H9.1 | Vectores `vectores/EQ08/` completos | `verify_package.py` sobre cada zip | §16.1 | ✅ |
+| H9.2 | Lista de conformidad §16.2 con evidencia | Documento | §16.2 | ✅ |
+| H9.3 | Matriz de interoperabilidad inicial | `docs/interoperabilidad/Matriz.md` | §16.3 | ✅ |
+| H9.4 | Scripts de firewall y publicación | Revisión de scripts | §5.1 | ✅ |
+| H9.5 | Documentación completa en español | Enlaces desde el README | — | ✅ |
+| H9.6 | Recorrido de punta a punta con dos nodos | Prueba de integración `EndToEndTests` (HASHSHA y HMACSHA256) | §11 | ✅ |
+| H9.7 | Otro equipo valida nuestros vectores (plan §6, fase 9) | Constancia del otro equipo en la matriz | §16.1 | 🖐 |
+| H9.8 | Una persona ajena instala el nodo con el manual en Windows y Linux (plan §6, fase 9) | Bitácora de instalación | — | 🖐 |
+
+## Verificación manual pendiente (🖐)
+
+No se puede verificar en el entorno de desarrollo en la nube (Linux, sin Windows real, sin LAN real y sin los nodos de otros equipos). Las pruebas automáticas de Windows las corre la CI (`windows-latest`); las siguientes debe hacerlas el equipo:
+
+- **H6.6**: descubrimiento por broadcast entre laptops Windows y Linux en el mismo router.
+- **H7.7**: delegación real a cada equipo (EQ01–EQ07) y llenado de la [matriz](../interoperabilidad/Matriz.md).
+- **H8.10**: recorrido completo de la interfaz entre una laptop Windows y una Linux.
+- **H9.7**: otro equipo valida `vectores/EQ08/`.
+- **H9.8**: una persona ajena instala el nodo con el [manual](../manuales/Manual_Instalacion_Configuracion.md).
 
 ## Pendientes e interpretaciones
 

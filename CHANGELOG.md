@@ -4,6 +4,20 @@ Todos los cambios relevantes del nodo EQ08 se documentan aquí. El formato sigue
 
 ## [Sin publicar]
 
+### Fase 9 — Conformidad, vectores y documentación
+
+#### Agregado
+
+- Vectores públicos `vectores/EQ08/` (§16.1) con llave marcada PRUEBA, generados con `tools/CentroCiber.VectorGen` y verificados por .NET (`VectorsTests`) y Python (`test_vectors.py`).
+- Lista de conformidad §16.2 con evidencia, matriz de interoperabilidad inicial y guía para probar contra otros equipos.
+- Scripts `firewall-linux.sh` (ufw), `firewall-windows.ps1` (`New-NetFirewallRule` / `netsh`), `publish.sh`/`.ps1` y `export-openapi.sh`.
+- Documentación en español: README, CONTRIBUTING, CODE_OF_CONDUCT, SECURITY, Manual técnico, Manual de instalación y configuración, Manual de identidad (propuesta), Reporte general, API con ejemplos `curl`, diagrama ER, diccionario de datos y semilla.
+- `.gitattributes` para conservar byte a byte los vectores.
+
+#### Corregido
+
+- La interfaz se sirve con estilos también al ejecutar el binario de `bin/` fuera de Development.
+
 ### Fase 8 — Interfaz web
 
 #### Agregado
