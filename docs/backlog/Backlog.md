@@ -8,13 +8,13 @@ Estados: ⬜ Pendiente · 🟨 En curso · ✅ Hecha (verificada en Linux) · �
 
 | ID | Historia | Prueba de aceptación | Estándar | Estado |
 | --- | --- | --- | --- | --- |
-| H1.1 | Solución `CentroCiber.slnx` con 6 proyectos `src/`, pruebas y herramientas; `Directory.Build.props`, CPM, `.editorconfig`, `dotnet-ef` local | `dotnet build -warnaserror` sin advertencias | — | ⬜ |
-| H1.2 | `.gitignore` ampliado (PFX, BD, datos, secretos) | `git check-ignore` sobre `x.pfx`, `a.db`, `data/` | §7, §13.3 | ⬜ |
-| H1.3 | Constantes del protocolo y diccionario 4.1 centralizados | Prueba de catálogo: 21 algoritmos, códigos y equipos | §3, §4.1, Anexo C | ⬜ |
-| H1.4 | EF Core + SQLite con migración inicial y semilla de 38 registros | Prueba que cuenta ≥ 30 registros tras migrar | — | ⬜ |
-| H1.5 | Configuración `appsettings.json` + variables `CC_` | Prueba de enlace de opciones con variable de entorno | §5.1 | ⬜ |
-| H1.6 | Host responde `GET /api/status` en 5008 | Prueba `WebApplicationFactory` | §10.3 | ⬜ |
-| H1.7 | CI Ubuntu/Windows y publicación autocontenida `win-x64`/`linux-x64` | Workflow `ci.yml`; `dotnet publish` local para ambos RID | — | ⬜ |
+| H1.1 | Solución `CentroCiber.slnx` con 6 proyectos `src/`, pruebas y herramientas; `Directory.Build.props`, CPM, `.editorconfig`, `dotnet-ef` local | `dotnet build -warnaserror` sin advertencias | — | ✅ |
+| H1.2 | `.gitignore` ampliado (PFX, BD, datos, secretos) | `git check-ignore` sobre `x.pfx`, `a.db`, `data/` | §7, §13.3 | ✅ |
+| H1.3 | Constantes del protocolo y diccionario 4.1 centralizados | Prueba de catálogo: 21 algoritmos, códigos y equipos | §3, §4.1, Anexo C | ✅ |
+| H1.4 | EF Core + SQLite con migración inicial y semilla de 38 registros | Prueba que cuenta ≥ 30 registros tras migrar | — | ✅ |
+| H1.5 | Configuración `appsettings.json` + variables `CC_` | Prueba de enlace de opciones con variable de entorno | §5.1 | ✅ |
+| H1.6 | Host responde `GET /api/status` en 5008 | Prueba `WebApplicationFactory` | §10.3 | ✅ |
+| H1.7 | CI Ubuntu/Windows y publicación autocontenida `win-x64`/`linux-x64` | Workflow `ci.yml`; `dotnet publish` local para ambos RID | — | ✅ |
 
 ## E2 — Identidad y primitivas
 
