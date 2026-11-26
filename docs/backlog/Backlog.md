@@ -59,11 +59,11 @@ Estados: ⬜ Pendiente · 🟨 En curso · ✅ Hecha (verificada en Linux) · �
 
 | ID | Historia | Prueba de aceptación | Estándar | Estado |
 | --- | --- | --- | --- | --- |
-| H6.1 | Anuncio UDP cada 30 s y oyente (ignora propios y ajenos de versión) | Prueba de serialización ≤ 1024 B y de filtro | §6.1 | ⬜ |
-| H6.2 | Escaneo /24 en 5001–5020 (500 ms, 64 en paralelo, ≥ 5 min automático) | Prueba con nodo en loopback | §6.2 | ⬜ |
-| H6.3 | Alta manual, TOFU y alerta de cambio de huella | Pruebas del directorio | §6.3, §6.4 | ⬜ |
-| H6.4 | Estado `offline` a los 90 s | Prueba con reloj simulado | §6.1 | ⬜ |
-| H6.5 | Dos instancias se descubren en loopback; scripts `run-two-nodes` | Prueba de integración con dos hosts | §6 | ⬜ |
+| H6.1 | Anuncio UDP cada 30 s y oyente (ignora propios y ajenos de versión) | Prueba de serialización ≤ 1024 B y de filtro | §6.1 | ✅ |
+| H6.2 | Escaneo /24 en 5001–5020 (500 ms, 64 en paralelo, ≥ 5 min automático) | Prueba con nodo en loopback | §6.2 | ✅ |
+| H6.3 | Alta manual, TOFU y alerta de cambio de huella | Pruebas del directorio | §6.3, §6.4 | ✅ |
+| H6.4 | Estado `offline` a los 90 s | Prueba con reloj simulado | §6.1 | ✅ |
+| H6.5 | Dos instancias se descubren en loopback; scripts `run-two-nodes` | Prueba de integración con dos hosts | §6 | ✅ |
 
 ## E7 — Cliente de delegación
 

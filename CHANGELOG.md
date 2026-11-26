@@ -4,6 +4,16 @@ Todos los cambios relevantes del nodo EQ08 se documentan aquí. El formato sigue
 
 ## [Sin publicar]
 
+### Fase 6 — Descubrimiento y directorio
+
+#### Agregado
+
+- Anuncio `CC-BEACON` por UDP 5099 al iniciar, cada 30 s y `offline` al apagar, a `255.255.255.255` y al broadcast de cada interfaz; oyente con `ReuseAddress` que ignora anuncios propios y de otras versiones.
+- Escaneo HTTP de respaldo de la /24 en los puertos 5001–5020 (500 ms, 64 en paralelo, ciclo automático limitado a 5 min).
+- Directorio con alta manual, verificación de `status`/`certificate` (CN y huella), confianza en el primer uso, alerta de cambio de huella y paso a `offline` a los 90 s.
+- Scripts `scripts/run-two-nodes.sh` y `.ps1` para levantar EQ08 y EQ09 en una sola máquina.
+- Los clientes HTTP hacia otros nodos no usan el proxy del sistema.
+
 ### Fase 5 — API de proveedor
 
 #### Agregado
