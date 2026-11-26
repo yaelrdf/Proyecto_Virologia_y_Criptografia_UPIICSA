@@ -84,6 +84,11 @@ public static class NodeHost
         var app = builder.Build();
         app.Services.GetRequiredService<NodeDirectory>().SyncSelfAsync().GetAwaiter().GetResult();
 
+        if (options.UiLanOnly)
+        {
+            app.UseMiddleware<Middleware.LanOnlyMiddleware>();
+        }
+
         app.UseProtocolApi();
         app.MapOpenApi("/openapi/{documentName}.json");
         app.MapControllers();
@@ -91,6 +96,7 @@ public static class NodeHost
         {
             app.UseAntiforgery();
             app.MapStaticAssets();
+            app.MapDownloads();
             app.MapRazorComponents<App>().AddInteractiveServerRenderMode();
         }
 
