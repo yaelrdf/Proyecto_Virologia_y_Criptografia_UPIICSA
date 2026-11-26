@@ -4,6 +4,18 @@ Todos los cambios relevantes del nodo EQ08 se documentan aquí. El formato sigue
 
 ## [Sin publicar]
 
+### Fase 8 — Interfaz web
+
+#### Agregado
+
+- Identidad «Atalaya EQ08» (propuesta): logotipo SVG original, paleta con contraste AA verificado y hoja de estilos propia, sin dependencias externas.
+- Pantallas en español: Operar (ida), Operar (vuelta) con validación paso a paso, Solicitudes, Consultas, Nodos y Ajustes.
+- Formularios de parámetros generados desde el perfil `GET /api/algorithms` (propio, del dueño en caché o mínimo de la tabla 4.2), con botón «Generar clave».
+- Barra de estado (nodo, IP, puertos, oyente UDP, huella) y notificaciones en tiempo real por el circuito de Blazor.
+- Filtro solo-LAN para la interfaz; la API sigue abierta a la LAN.
+- Descargas del zip y del original de un resultado (abierto con la llave propia).
+- Pruebas bUnit de los componentes clave y pruebas de host de las 6 pantallas.
+
 ### Fase 7 — Cliente de delegación
 
 #### Agregado

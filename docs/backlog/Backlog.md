@@ -80,15 +80,16 @@ Estados: ⬜ Pendiente · 🟨 En curso · ✅ Hecha (verificada en Linux) · �
 
 | ID | Historia | Prueba de aceptación | Estándar | Estado |
 | --- | --- | --- | --- | --- |
-| H8.1 | Diseño base, identidad visual y barra de estado | Prueba bUnit de la barra | §2 | ⬜ |
-| H8.2 | Operar (ida) con formulario desde el perfil | Prueba bUnit del formulario dinámico | §10.4 | ⬜ |
-| H8.3 | Operar (vuelta) con validación paso a paso y veredicto | Recorrido manual | §13.1, §11.4 | ⬜ |
-| H8.4 | Solicitudes (Aceptar/Rechazar, «Remitente no confirmado») | Prueba bUnit | §15 | ⬜ |
-| H8.5 | Consultas (filtro por origen, manifiesto, descarga, inverse, reenvío) | Recorrido manual | §15 | ⬜ |
-| H8.6 | Nodos (directorio, buscar, alta manual, TOFU, alerta) | Prueba bUnit de la alerta | §6.3 | ⬜ |
-| H8.7 | Ajustes | Recorrido manual | §7 | ⬜ |
-| H8.8 | Filtro solo-LAN para la interfaz | Prueba del middleware | Plan §5 | ⬜ |
-| H8.9 | Notificaciones en tiempo real | Prueba del concentrador de eventos | Plan §5 | ⬜ |
+| H8.1 | Diseño base, identidad visual y barra de estado | Prueba bUnit de la barra | §2 | ✅ |
+| H8.2 | Operar (ida) con formulario desde el perfil | Prueba bUnit del formulario dinámico | §10.4 | ✅ |
+| H8.3 | Operar (vuelta) con validación paso a paso y veredicto | Recorrido con Playwright (Chromium, Linux) y prueba de host | §13.1, §11.4 | ✅ |
+| H8.4 | Solicitudes (Aceptar/Rechazar, «Remitente no confirmado») | Prueba bUnit | §15 | ✅ |
+| H8.5 | Consultas (filtro por origen, manifiesto, descarga, inverse, reenvío) | Recorrido con Playwright y prueba de reenvío | §15 | ✅ |
+| H8.6 | Nodos (directorio, buscar, alta manual, TOFU, alerta) | Prueba bUnit de la alerta | §6.3 | ✅ |
+| H8.7 | Ajustes | Prueba de host (página) y recorrido con Playwright | §7 | ✅ |
+| H8.8 | Filtro solo-LAN para la interfaz | Prueba del middleware | Plan §5 | ✅ |
+| H8.9 | Notificaciones en tiempo real | Prueba del concentrador de eventos | Plan §5 | ✅ |
+| H8.10 | Recorrido Operar → bandeja → Aceptar → Consultas → inverse entre una laptop Windows y una Linux | Prueba manual del equipo (plan §6 fase 8) | §11 | 🖐 |
 
 ## E9 — Conformidad, vectores y documentación
 
