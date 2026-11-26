@@ -84,7 +84,7 @@ $ python3 -m pytest tests/interop -q
 
 ### 4.3 Integración continua
 
-El workflow `CI` (`.github/workflows/ci.yml`) terminó con éxito en Ubuntu y en Windows en las ejecuciones revisadas (cierres de las fases 1 a 6), incluidas las pruebas de UDP y HTTPS en Windows. El resultado de la ejecución final está en la pestaña *Actions* del repositorio. <!-- TODO: anotar enlace y estado de la última ejecución de la CI antes de entregar -->
+El workflow `CI` (`.github/workflows/ci.yml`) terminó con éxito en **Ubuntu y Windows** en los cierres de las 9 fases. Esto incluye las pruebas de UDP, HTTPS, delegación y vectores en Windows. La ejecución del cierre de la fase 9 ([run 9](https://github.com/yaelrdf/Proyecto_Virologia_y_Criptografia_UPIICSA/actions/runs/45878770073)) publicó los artefactos autocontenidos `centrociber-eq08-win-x64` (≈ 54 MB) y `centrociber-eq08-linux-x64` (≈ 54 MB), además de los resultados de pruebas de ambos sistemas. <!-- TODO: confirmar el estado de la última ejecución antes de entregar -->
 
 ### 4.4 Recorridos manuales en el entorno de desarrollo
 
