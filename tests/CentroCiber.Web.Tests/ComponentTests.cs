@@ -103,8 +103,15 @@ public class InboxAndNodeTableTests : BunitContext
     {
         var node = new NodeEntity
         {
-            NodeId = "EQ03", TeamNumber = 3, Ip = "192.168.1.23", HttpPort = 5003, Source = "beacon", Status = "online",
-            TrustState = TrustStates.ThumbprintChanged, PinnedThumbprintSha256 = new string('A', 64), ObservedThumbprintSha256 = new string('B', 64),
+            NodeId = "EQ03",
+            TeamNumber = 3,
+            Ip = "192.168.1.23",
+            HttpPort = 5003,
+            Source = "beacon",
+            Status = "online",
+            TrustState = TrustStates.ThumbprintChanged,
+            PinnedThumbprintSha256 = new string('A', 64),
+            ObservedThumbprintSha256 = new string('B', 64),
             Algorithms = "RSA,ECC",
         };
         NodeEntity? confirmed = null;

@@ -105,8 +105,16 @@ public class DelegationTests
             {
                 db.Nodes.Add(new NodeEntity
                 {
-                    NodeId = id, TeamNumber = team, Ip = "127.0.0.1", HttpPort = 5000 + team, Source = "beacon", Status = "online",
-                    TrustState = TrustStates.Pinned, PinnedThumbprintSha256 = new string('A', 64), CertificatePem = "x", Algorithms = "DIGITALSIG",
+                    NodeId = id,
+                    TeamNumber = team,
+                    Ip = "127.0.0.1",
+                    HttpPort = 5000 + team,
+                    Source = "beacon",
+                    Status = "online",
+                    TrustState = TrustStates.Pinned,
+                    PinnedThumbprintSha256 = new string('A', 64),
+                    CertificatePem = "x",
+                    Algorithms = "DIGITALSIG",
                 });
             }
 
