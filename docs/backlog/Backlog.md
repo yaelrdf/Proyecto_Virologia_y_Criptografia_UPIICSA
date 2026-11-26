@@ -30,8 +30,8 @@ Estados: ⬜ Pendiente · 🟨 En curso · ✅ Hecha (verificada en Linux) · �
 
 | ID | Historia | Prueba de aceptación | Estándar | Estado |
 | --- | --- | --- | --- | --- |
-| H3.1 | `IAlgorithmProvider` + `HASHSHA` (SHA-256/512) local | Vectores NIST FIPS 180-4 | §4.2, §4.3 | ⬜ |
-| H3.2 | `HMACSHA256` local con comparación en tiempo constante | Vectores RFC 4231 casos 1–7 | §4.2, §13.3 | ⬜ |
+| H3.1 | `IAlgorithmProvider` + `HASHSHA` (SHA-256/512) local | Vectores NIST FIPS 180-4 | §4.2, §4.3 | ✅ |
+| H3.2 | `HMACSHA256` local con comparación en tiempo constante | Vectores RFC 4231 casos 1–7 | §4.2, §13.3 | ✅ |
 
 ## E4 — Paquetes v2.0
 

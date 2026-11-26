@@ -4,6 +4,14 @@ Todos los cambios relevantes del nodo EQ08 se documentan aquí. El formato sigue
 
 ## [Sin publicar]
 
+### Fase 3 — Algoritmos propios
+
+#### Agregado
+
+- `HASHSHA` con SHA-256 y SHA-512, y `HMACSHA256` con clave ≥ 32 bytes; las comparaciones de `inverse` usan `CryptographicOperations.FixedTimeEquals` y las claves se borran de memoria.
+- Contrato `IAlgorithmProvider` (`forward`/`inverse`) común a algoritmos locales y remotos.
+- Vectores NIST FIPS 180-4 y RFC 4231 (casos 1–7) en las pruebas.
+
 ### Fase 2 — Identidad y primitivas
 
 #### Agregado
