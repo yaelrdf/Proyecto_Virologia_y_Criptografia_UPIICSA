@@ -1,0 +1,121 @@
+@page "/nodos"
+@implements IDisposable
+@inject NodeDirectory Directory
+@inject CentroCiber.Discovery.SubnetScanner Scanner
+@inject NotificationHub Hub
+
+<PageTitle>Nodos · Atalaya</PageTitle>
+<h1>Nodos</h1>
+<p class="subtitulo">Directorio local (§6.4). Los nodos llegan por anuncio UDP, escaneo o alta manual; confirma su huella antes de usarlos (TOFU).</p>
+
+<div class="grid">
+    <div class="card">
+        <h2 style="margin-top:0">Buscar nodos</h2>
+        <p class="hint">Recorre la subred /24 de cada interfaz en los puertos 5001–5020 (500 ms por intento).</p>
+        <button class="btn" disabled="@scanning" @onclick="ScanAsync">@(scanning ? "Buscando…" : "Buscar nodos")</button>
+    </div>
+    <div class="card">
+        <h2 style="margin-top:0">Alta manual</h2>
+        <div class="row">
+            <input type="text" placeholder="IP (ej. 192.168.1.21)" @bind="ip" aria-label="IP" style="flex:2" />
+            <input type="number" placeholder="Puerto" @bind="port" aria-label="Puerto" style="flex:1" />
+            <button class="btn" @onclick="AddAsync">Agregar</button>
+        </div>
+    </div>
+</div>
+
+@if (message is not null)
+{
+    <div class="alerta @(messageOk ? "ok" : "error")">@message</div>
+}
+
+<NodeTable Items="nodes" OnConfirm="ConfirmAsync" OnVerify="VerifyAsync" OnRemove="RemoveAsync" />
+
+@code {
+    private IReadOnlyList<NodeEntity> nodes = [];
+    private string ip = string.Empty;
+    private int port = 5001;
+    private bool scanning;
+    private string? message;
+    private bool messageOk;
+
+    protected override async Task OnInitializedAsync()
+    {
+        Hub.Published += OnEvent;
+        await LoadAsync();
+    }
+
+    private async Task LoadAsync() => nodes = await Directory.ListAsync();
+
+    private void OnEvent(NodeEvent e)
+    {
+        if (e.Kind is NodeEventKind.NodeDiscovered or NodeEventKind.NodeStatusChanged or NodeEventKind.ThumbprintChanged)
+        {
+            _ = InvokeAsync(async () =>
+            {
+                await LoadAsync();
+                StateHasChanged();
+            });
+        }
+    }
+
+    private async Task ScanAsync()
+    {
+        scanning = true;
+        try
+        {
+            var hits = await Directory.ScanAsync(Scanner);
+            (message, messageOk) = ($"Escaneo terminado: {hits.Count} nodo(s) encontrados.", true);
+        }
+        finally
+        {
+            scanning = false;
+            await LoadAsync();
+        }
+    }
+
+    private async Task AddAsync()
+    {
+        try
+        {
+            var n = await Directory.AddManualAsync(ip.Trim(), port);
+            (message, messageOk) = ($"{n.NodeId} agregado. Compara su huella con la que te dé el otro equipo y confírmala.", true);
+        }
+        catch (Exception ex) when (ex is InvalidOperationException or ArgumentException)
+        {
+            (message, messageOk) = (ex.Message, false);
+        }
+
+        await LoadAsync();
+    }
+
+    private async Task ConfirmAsync(NodeEntity n)
+    {
+        try
+        {
+            await Directory.ConfirmAsync(n.NodeId);
+            (message, messageOk) = ($"Huella de {n.NodeId} fijada.", true);
+        }
+        catch (InvalidOperationException ex)
+        {
+            (message, messageOk) = (ex.Message, false);
+        }
+
+        await LoadAsync();
+    }
+
+    private async Task VerifyAsync(NodeEntity n)
+    {
+        var v = await Directory.VerifyAsync(n.NodeId);
+        (message, messageOk) = v?.LastError is { } err ? (err, false) : ($"{n.NodeId} verificado.", true);
+        await LoadAsync();
+    }
+
+    private async Task RemoveAsync(NodeEntity n)
+    {
+        await Directory.RemoveAsync(n.NodeId);
+        await LoadAsync();
+    }
+
+    public void Dispose() => Hub.Published -= OnEvent;
+}

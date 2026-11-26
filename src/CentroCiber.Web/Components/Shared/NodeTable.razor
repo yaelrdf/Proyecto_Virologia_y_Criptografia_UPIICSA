@@ -1,0 +1,74 @@
+@* Directorio de nodos (§6.4) con TOFU y alerta de cambio de huella (§6.3). *@
+@foreach (var n in Items.Where(n => n.TrustState == TrustStates.ThumbprintChanged))
+{
+    <div class="alerta error" role="alert">
+        <b>¡Alerta! La huella de @n.NodeId cambió.</b> No se usará hasta que la aceptes de nuevo.
+        Fijada: <span class="huella">@n.PinnedThumbprintSha256</span><br />
+        Nueva: <span class="huella">@n.ObservedThumbprintSha256</span>
+    </div>
+}
+<div class="tabla">
+    <table>
+        <thead>
+            <tr><th>Nodo</th><th>Ubicación</th><th>Algoritmos</th><th>Origen</th><th>Estado</th><th>Confianza</th><th>Huella observada</th><th>Acciones</th></tr>
+        </thead>
+        <tbody>
+            @foreach (var n in Items)
+            {
+                <tr>
+                    <td><b>@n.NodeId</b>@(n.IsSelf ? " (este nodo)" : "")</td>
+                    <td class="mono">@n.Ip:@n.HttpPort@(n.HttpsPort is { } h ? $" / {h}" : "")</td>
+                    <td>@n.Algorithms.Replace(",", ", ", StringComparison.Ordinal)</td>
+                    <td>@n.Source</td>
+                    <td><span class="badge @(n.Status == "online" ? "ok" : "error")">@n.Status</span></td>
+                    <td><span class="badge @TrustBadge(n.TrustState)">@TrustLabel(n.TrustState)</span>
+                        @if (n.LastError is not null)
+                        {
+                            <div class="hint">@n.LastError</div>
+                        }
+                    </td>
+                    <td class="huella">@n.ObservedThumbprintSha256</td>
+                    <td>
+                        @if (!n.IsSelf)
+                        {
+                            <div class="row">
+                                @if (n.TrustState is TrustStates.Pending or TrustStates.ThumbprintChanged)
+                                {
+                                    <button class="btn chico" @onclick="() => OnConfirm.InvokeAsync(n)">@(n.TrustState == TrustStates.ThumbprintChanged ? "Aceptar nueva huella" : "Confirmar huella")</button>
+                                }
+                                <button class="btn secundario chico" @onclick="() => OnVerify.InvokeAsync(n)">Verificar</button>
+                                <button class="btn peligro chico" @onclick="() => OnRemove.InvokeAsync(n)">Quitar</button>
+                            </div>
+                        }
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+</div>
+
+@code {
+    [Parameter] public IReadOnlyList<NodeEntity> Items { get; set; } = [];
+
+    [Parameter] public EventCallback<NodeEntity> OnConfirm { get; set; }
+
+    [Parameter] public EventCallback<NodeEntity> OnVerify { get; set; }
+
+    [Parameter] public EventCallback<NodeEntity> OnRemove { get; set; }
+
+    private static string TrustBadge(string s) => s switch
+    {
+        TrustStates.Pinned or TrustStates.Self => "ok",
+        TrustStates.Pending => "warn",
+        _ => "error",
+    };
+
+    private static string TrustLabel(string s) => s switch
+    {
+        TrustStates.Pinned => "Huella fijada",
+        TrustStates.Self => "Propio",
+        TrustStates.Pending => "Pendiente de confirmar",
+        TrustStates.ThumbprintChanged => "Huella cambiada",
+        _ => "Inválido",
+    };
+}
