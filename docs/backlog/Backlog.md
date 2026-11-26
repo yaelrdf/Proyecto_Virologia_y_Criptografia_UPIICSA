@@ -20,11 +20,11 @@ Estados: ⬜ Pendiente · 🟨 En curso · ✅ Hecha (verificada en Linux) · �
 
 | ID | Historia | Prueba de aceptación | Estándar | Estado |
 | --- | --- | --- | --- | --- |
-| H2.1 | Generar/cargar PFX con `CC_PFX_PASSWORD`; certificado RSA-2048 según §7 | Pruebas de sujeto, vigencia, serie, usos y huella | §7 | ⬜ |
-| H2.2 | Firma RSA-PSS-SHA256 (sal 32) | Firma/verificación y rechazo de alteración | §8.2 | ⬜ |
-| H2.3 | Sobre híbrido `CC-ENV-1` | Ida y vuelta, destinatario incorrecto, AAD alterado | §8.3 | ⬜ |
-| H2.4 | Hash canónico de `publicParameters` y cadena de firma | Ejemplo del §8.5 y del §8.4 | §8.4, §8.5 | ⬜ |
-| H2.5 | Interoperabilidad con Python `cryptography` en ambos sentidos | `pytest tests/interop` invocado desde `dotnet test` | §8, §16.2 | ⬜ |
+| H2.1 | Generar/cargar PFX con `CC_PFX_PASSWORD`; certificado RSA-2048 según §7 | Pruebas de sujeto, vigencia, serie, usos y huella | §7 | ✅ |
+| H2.2 | Firma RSA-PSS-SHA256 (sal 32) | Firma/verificación y rechazo de alteración | §8.2 | ✅ |
+| H2.3 | Sobre híbrido `CC-ENV-1` | Ida y vuelta, destinatario incorrecto, AAD alterado | §8.3 | ✅ |
+| H2.4 | Hash canónico de `publicParameters` y cadena de firma | Ejemplo del §8.5 y del §8.4 | §8.4, §8.5 | ✅ |
+| H2.5 | Interoperabilidad con Python `cryptography` en ambos sentidos | `pytest tests/interop` invocado desde `dotnet test` | §8, §16.2 | ✅ |
 
 ## E3 — Algoritmos propios
 

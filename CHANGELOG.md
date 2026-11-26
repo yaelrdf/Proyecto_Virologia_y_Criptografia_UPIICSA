@@ -4,6 +4,14 @@ Todos los cambios relevantes del nodo EQ08 se documentan aquí. El formato sigue
 
 ## [Sin publicar]
 
+### Fase 2 — Identidad y primitivas
+
+#### Agregado
+
+- Identidad X.509 del nodo (§7): RSA-2048 autofirmado, `CN=EQ08, OU=Equipo 08, O=Centro de Ciberseguridad, C=MX`, 365 días, serie aleatoria de 72 bits, usos `digitalSignature` y `keyEncipherment`, guardada en PFX protegido por `CC_PFX_PASSWORD`.
+- Firma RSA-PSS-SHA256 con sal de 32 bytes (§8.2), sobre híbrido `CC-ENV-1` (§8.3), hash canónico de `publicParameters` (§8.5) y cadena de firma (§8.4).
+- Implementación independiente en Python (`tests/interop/`) que verifica lo producido por .NET y crea sobres que .NET abre, integrada en `dotnet test` y en la CI.
+
 ### Fase 1 — Base multiplataforma
 
 #### Agregado
