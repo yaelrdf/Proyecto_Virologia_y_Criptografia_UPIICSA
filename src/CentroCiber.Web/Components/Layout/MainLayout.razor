@@ -1,23 +1,30 @@
-﻿@inherits LayoutComponentBase
+@inherits LayoutComponentBase
+@inject NodeContext Node
 
-<div class="page">
-    <div class="sidebar">
-        <NavMenu />
-    </div>
+<header class="cc-header">
+    <a class="cc-brand" href="/">
+        <img src="img/logo.svg" alt="" />
+        <span>Atalaya @Node.NodeId<small>Centro de Ciberseguridad Comunitario</small></span>
+    </a>
+    <nav class="cc-nav" aria-label="Principal">
+        <NavLink href="/" Match="NavLinkMatch.All">Operar (ida)</NavLink>
+        <NavLink href="/operar/vuelta">Operar (vuelta)</NavLink>
+        <NavLink href="/solicitudes">Solicitudes</NavLink>
+        <NavLink href="/consultas">Consultas</NavLink>
+        <NavLink href="/nodos">Nodos</NavLink>
+        <NavLink href="/ajustes">Ajustes</NavLink>
+    </nav>
+</header>
 
-    <main>
-        <div class="top-row px-4">
-            <a href="https://learn.microsoft.com/aspnet/core/" target="_blank">About</a>
-        </div>
+<main class="cc-main">
+    @Body
+</main>
 
-        <article class="content px-4">
-            @Body
-        </article>
-    </main>
-</div>
+<NotificationToasts />
+<StatusBar />
 
 <div id="blazor-error-ui" data-nosnippet>
-    An unhandled error has occurred.
-    <a href="." class="reload">Reload</a>
-    <span class="dismiss">🗙</span>
+    Ocurrió un error inesperado en la interfaz.
+    <a href="." class="reload">Recargar</a>
+    <span class="dismiss">✕</span>
 </div>

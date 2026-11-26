@@ -1,0 +1,32 @@
+@implements IDisposable
+@inject NodeContext Node
+@inject CentroCiber.Discovery.BeaconService Beacon
+@inject NotificationHub Hub
+
+<footer class="cc-statusbar" role="status" aria-label="Estado del nodo">
+    <span><b>@Node.NodeId</b> · equipo @Node.TeamNumber</span>
+    <span>IP <b class="mono">@Ip</b></span>
+    <span>HTTP <b>@Node.HttpPort</b> · HTTPS <b>@(Node.HttpsPort?.ToString(System.Globalization.CultureInfo.InvariantCulture) ?? "desactivado")</b></span>
+    <span><span class="cc-dot @(Beacon.Listening ? "" : "off")"></span>Oyente UDP @(Beacon.Listening ? "activo" : "inactivo")</span>
+    <span>Huella <span class="mono">@Node.Identity.Thumbprint[..16]…</span></span>
+    @if (Pending > 0)
+    {
+        <span><b>@Pending</b> evento(s) nuevos</span>
+    }
+</footer>
+
+@code {
+    private string Ip => Node.AdvertisedAddress.ToString();
+
+    private int Pending { get; set; }
+
+    protected override void OnInitialized() => Hub.Published += OnEvent;
+
+    private void OnEvent(NodeEvent e)
+    {
+        Pending++;
+        _ = InvokeAsync(StateHasChanged);
+    }
+
+    public void Dispose() => Hub.Published -= OnEvent;
+}
