@@ -83,6 +83,10 @@ public sealed class PackageLibrary(
         return EnvelopeCrypto.OpenDetached(envelope, validated.Data, node.Identity, validated.Manifest.PacketId);
     }
 
+    /// <summary>Valida un paquete antes de guardarlo (sin ventana de tiempo ni anti-repetición).</summary>
+    public Task<ValidatedPackage> ValidateForStorageAsync(byte[] zip, CancellationToken ct = default) =>
+        validator.ValidateAsync(zip, PackageValidationOptions.ForInverse with { ExpectedPacketType = null }, ct);
+
     public async Task DeleteAsync(int id, CancellationToken ct = default)
     {
         await using var db = await dbf.CreateDbContextAsync(ct);
