@@ -4,6 +4,17 @@ Todos los cambios relevantes del nodo EQ08 se documentan aquí. El formato sigue
 
 ## [Sin publicar]
 
+### Fase 7 — Cliente de delegación
+
+#### Agregado
+
+- Proveedor remoto para los 19 algoritmos ajenos: elige al dueño (tabla 4.1; para reservados, el `teamNumber` menor), exige huella fijada y nodo en línea, y si no, muestra «no disponible» con el motivo.
+- Peticiones firmadas con secretos en `CC-ENV-1` para el dueño, encabezados `X-CC-*`, HTTPS con huella fijada cuando ambos nodos lo ofrecen.
+- Manejo de `200`, `202` (consulta de `jobId`) y `problem+json`; los paquetes recibidos se validan con §13.1 y los `result` se abren con la llave propia.
+- Reenvío a bandejas ajenas con re-firma, conservando `producerNode` y `keyRef`.
+- `tools/CentroCiber.MockNode`: nodo simulado EQ01 con `AESGCM`, usable en pruebas y desde la línea de comandos.
+- Prueba de punta a punta entre dos nodos (EQ08 ↔ EQ09) para `HASHSHA` y `HMACSHA256`: forward → bandeja → aceptar → inverse delegado.
+
 ### Fase 6 — Descubrimiento y directorio
 
 #### Agregado

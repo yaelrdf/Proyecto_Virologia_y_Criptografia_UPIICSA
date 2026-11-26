@@ -69,12 +69,12 @@ Estados: ⬜ Pendiente · 🟨 En curso · ✅ Hecha (verificada en Linux) · �
 
 | ID | Historia | Prueba de aceptación | Estándar | Estado |
 | --- | --- | --- | --- | --- |
-| H7.1 | Selección del dueño y «no disponible» | Pruebas de selección (tabla 4.1, reservados) | §4.4, §11.6 | ⬜ |
-| H7.2 | `forward` delegado: petición firmada, sobre para el dueño | AESGCM contra `MockNode` | §10.6, §11.2 | ⬜ |
-| H7.3 | `inverse` delegado y apertura del `resultEnvelope` | AESGCM contra `MockNode` | §11.4 | ⬜ |
-| H7.4 | Manejo de `202` y consulta de `jobId`; errores `problem+json` | `MockNode` en modo asíncrono | §10.7 | ⬜ |
-| H7.5 | `keyRef` y reenvío a bandeja ajena | Reenvío a un segundo nodo | §9.6, §11.3, §12 | ⬜ |
-| H7.6 | `MockNode` (EQ01/AESGCM) en pruebas y como herramienta | `dotnet run --project tools/CentroCiber.MockNode` | §16 | ⬜ |
+| H7.1 | Selección del dueño y «no disponible» | Pruebas de selección (tabla 4.1, reservados) | §4.4, §11.6 | ✅ |
+| H7.2 | `forward` delegado: petición firmada, sobre para el dueño | AESGCM contra `MockNode` | §10.6, §11.2 | ✅ |
+| H7.3 | `inverse` delegado y apertura del `resultEnvelope` | AESGCM contra `MockNode` | §11.4 | ✅ |
+| H7.4 | Manejo de `202` y consulta de `jobId`; errores `problem+json` | `MockNode` en modo asíncrono | §10.7 | ✅ |
+| H7.5 | `keyRef` y reenvío a bandeja ajena | Reenvío a un segundo nodo | §9.6, §11.3, §12 | ✅ |
+| H7.6 | `MockNode` (EQ01/AESGCM) en pruebas y como herramienta | `dotnet run --project tools/CentroCiber.MockNode` | §16 | ✅ |
 
 ## E8 — Interfaz web
 
