@@ -193,9 +193,25 @@ public sealed class RemoteAlgorithmProvider(
         content.Add(file, ProtocolConstants.PartPackage, forwarded.FileName);
         using var msg = Message(HttpMethod.Post, new Uri(baseUri, "/api/requests/receive"), forwarded.Manifest.PacketId);
         msg.Content = content;
-        using var response = await SendWithTlsHandlingAsync(http, msg, target.NodeId, ct);
-        await ThrowIfProblemAsync(response, target.NodeId, ct);
-        await audit.LogAsync("outbox.sent", targetNode, null, $"{forwarded.Manifest.AlgorithmCode} {forwarded.Manifest.PacketId}", ct);
+        HttpResponseMessage response;
+        try
+        {
+            response = await SendWithTlsHandlingAsync(http, msg, target.NodeId, ct);
+            await ThrowIfProblemAsync(response, target.NodeId, ct);
+        }
+        catch (ProtocolException ex)
+        {
+            await audit.LogAsync(AuditService.EventDelegateError, targetNode, ex.Code, "Envío a bandeja: " + ex.Message, ct);
+            throw;
+        }
+        catch (Exception ex) when (ex is HttpRequestException or TaskCanceledException)
+        {
+            await audit.LogAsync(AuditService.EventDelegateError, targetNode, ErrorCodes.Timeout, "Envío a bandeja: " + ex.Message, ct);
+            throw new ProviderUnavailableException($"No se pudo contactar a {targetNode}: {ex.Message}");
+        }
+
+        using var _ = response;
+        await audit.LogAsync(AuditService.EventOutboxSent, targetNode, null, $"{forwarded.Manifest.AlgorithmCode} {forwarded.Manifest.PacketId}", ct);
         return JsonSerializer.Deserialize<ReceiveResponse>(await response.Content.ReadAsStringAsync(ct))!;
     }
 
@@ -267,7 +283,7 @@ public sealed class RemoteAlgorithmProvider(
         catch (ProtocolException ex)
         {
             await directory.UpdateOperationAsync(request.RequestId, ProtocolConstants.JobFailed, null, ex.Code, ex.Message, null, ct);
-            await audit.LogAsync("delegate.error", owner.NodeId, ex.Code, ex.Message, ct);
+            await audit.LogAsync(AuditService.EventDelegateError, owner.NodeId, ex.Code, ex.Message, ct);
             throw;
         }
         catch (Exception ex) when (ex is HttpRequestException or TaskCanceledException)

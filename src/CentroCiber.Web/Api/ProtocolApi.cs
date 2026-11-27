@@ -126,6 +126,29 @@ public static class ProtocolApi
         ctx.Response.StatusCode = def.HttpStatus;
         ctx.Response.ContentType = ProtocolConstants.ProblemContentType;
         await ctx.Response.WriteAsync(JsonSerializer.Serialize(problem, ProtocolJson.Compact));
+        await RecordRejectionAsync(ctx, def.Code, detail);
+    }
+
+    /// <summary>
+    /// Diagnóstico (ADR 0014): todo rechazo de la API queda en la bitácora con ruta, IP, nodo, código y detalle,
+    /// para depurar con el otro equipo. Nunca se registra el cuerpo de la petición ni secretos.
+    /// </summary>
+    private static async Task RecordRejectionAsync(HttpContext ctx, string code, string detail)
+    {
+        try
+        {
+            var audit = ctx.RequestServices.GetRequiredService<Application.Services.AuditService>();
+            var header = ctx.Request.Headers[ProtocolConstants.HeaderNode].FirstOrDefault();
+            var nodeId = Identifiers.IsNodeId(header) ? header : null;
+            var remote = ctx.Connection.RemoteIpAddress;
+            var ip = remote is null ? "local" : (remote.IsIPv4MappedToIPv6 ? remote.MapToIPv4() : remote).ToString();
+            await audit.LogAsync(Application.Services.AuditService.EventApiRejected, nodeId, code,
+                $"{ctx.Request.Method} {ctx.Request.Path} desde {ip}: {detail}", CancellationToken.None);
+        }
+        catch (Exception ex) when (ex is InvalidOperationException or Microsoft.EntityFrameworkCore.DbUpdateException)
+        {
+            // La bitácora nunca debe impedir responder el error.
+        }
     }
 
     /// <summary>Lee una parte del multipart como bytes exactos (archivo o campo de texto).</summary>

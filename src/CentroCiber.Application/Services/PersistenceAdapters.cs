@@ -42,6 +42,10 @@ public sealed class DbReplayGuard(IDbContextFactory<CentroCiberDbContext> dbf, T
 /// <summary>Bitácora sin secretos (tabla <c>AuditLog</c>).</summary>
 public sealed class AuditService(IDbContextFactory<CentroCiberDbContext> dbf, TimeProvider clock)
 {
+    public const string EventApiRejected = "api.rejected";
+    public const string EventDelegateError = "delegate.error";
+    public const string EventOutboxSent = "outbox.sent";
+
     public async Task LogAsync(string evt, string? nodeId, string? code, string? detail, CancellationToken ct = default)
     {
         await using var db = await dbf.CreateDbContextAsync(ct);
@@ -54,6 +58,17 @@ public sealed class AuditService(IDbContextFactory<CentroCiberDbContext> dbf, Ti
             Detail = detail is { Length: > 500 } ? detail[..500] : detail,
         });
         await db.SaveChangesAsync(ct);
+    }
+
+    /// <summary>Rechazos recientes: peticiones que EQ08 rechazó y errores al delegar o enviar.</summary>
+    public Task<IReadOnlyList<AuditLogEntity>> RecentRejectionsAsync(int count, CancellationToken ct = default) =>
+        RecentByEventAsync([EventApiRejected, EventDelegateError], count, ct);
+
+    public async Task<IReadOnlyList<AuditLogEntity>> RecentByEventAsync(IReadOnlyCollection<string> events, int count, CancellationToken ct = default)
+    {
+        await using var db = await dbf.CreateDbContextAsync(ct);
+        return await db.AuditLog.AsNoTracking().Where(a => events.Contains(a.Event))
+            .OrderByDescending(a => a.Id).Take(count).ToListAsync(ct);
     }
 
     public async Task<IReadOnlyList<AuditLogEntity>> RecentAsync(int count, CancellationToken ct = default)
