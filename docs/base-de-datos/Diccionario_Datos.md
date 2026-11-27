@@ -114,6 +114,7 @@ Todas las fechas se guardan como `DateTime` en **UTC**. Los textos son `TEXT` en
 | `EnabledVariants` | TEXT | ✔ | `SHA-256,SHA-512,HMAC-SHA256` |
 | `HttpsEnabled` | INTEGER (bool) | ✔ | Ofrecer HTTPS (requiere reinicio) |
 | `AcceptingPackages` | INTEGER (bool) | ✔ | Si es falso, la bandeja responde `E-BUSY` |
+| `AutoAcceptInbox` | INTEGER (bool) | ✔ | Panel de pruebas: aceptar automáticamente los paquetes válidos (por omisión 0) |
 | `MaxPayloadBytes` | INTEGER | ✔ | 52 428 800 |
 | `PfxFileName` | TEXT | ✔ | Nombre del PFX (la contraseña nunca se guarda) |
 
@@ -123,7 +124,7 @@ Todas las fechas se guardan como `DateTime` en **UTC**. Los textos son `TEXT` en
 | --- | --- | :---: | --- |
 | `Id` | INTEGER PK | ✔ | Autoincremento |
 | `TimestampUtc` | TEXT (fecha, índice) | ✔ | Momento del evento |
-| `Event` | TEXT | ✔ | `inbox.received`, `inbox.rejected`, `crypto.forward`, `delegate.inverse`, `outbox.sent`, `identity.regenerated`, … |
+| `Event` | TEXT | ✔ | `inbox.received`, `api.rejected`, `crypto.forward`, `delegate.inverse`, `delegate.error`, `outbox.sent`, `identity.regenerated`, … |
 | `NodeId` | TEXT | | Nodo involucrado |
 | `Code` | TEXT | | Código `E-...` |
 | `Detail` | TEXT (≤ 500) | | Algoritmo e identificadores; **nunca** claves ni contenido |

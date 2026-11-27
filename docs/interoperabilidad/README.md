@@ -20,7 +20,8 @@ Cómo comprobar que EQ08 se entiende con los nodos de los demás equipos, siguie
 4. **EQ08 como proveedor**: el otro equipo pide `HASHSHA` o `HMACSHA256` a EQ08. Revisa *Ajustes → Bitácora* (`crypto.forward`, `crypto.inverse`).
 5. **Bandejas**: envía un paquete desde Consultas con **Reenviar a…**. El otro equipo debe verlo en su bandeja con «Firma OK» y poder aceptarlo. Haz lo mismo en sentido contrario y acepta en **Solicitudes**.
 6. **Rechazos** (§16.2): el otro equipo envía un zip con 4 archivos, uno con el hash alterado, uno con la firma alterada, uno con un timestamp viejo y otro repetido. EQ08 debe responder `E-ZIP-STRUCTURE`, `E-HASH`, `E-SIGNATURE`, `E-TIMESTAMP` y `E-DUPLICATE`.
-7. Anota cada combinación en la [matriz](Matriz.md), con fecha, resultado y código de error si lo hubo.
+7. Para pruebas rápidas usa **Enviar** (mandar un paquete a su bandeja) y **Bandeja** (ver y descifrar lo que te mandan). Si algo se rechaza, **Bandeja → Rechazos recientes** muestra el código y el detalle exactos.
+8. Anota cada combinación en la [matriz](Matriz.md), con fecha, resultado y código de error si lo hubo.
 
 Herramientas útiles:
 

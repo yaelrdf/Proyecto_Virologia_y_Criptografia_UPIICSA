@@ -106,6 +106,18 @@ Estados: ⬜ Pendiente · 🟨 En curso · ✅ Hecha (verificada en Linux) · �
 | H9.7 | Otro equipo valida nuestros vectores (plan §6, fase 9) | Constancia del otro equipo en la matriz | §16.1 | 🖐 |
 | H9.8 | Una persona ajena instala el nodo con el manual en Windows y Linux (plan §6, fase 9) | Bitácora de instalación | — | 🖐 |
 
+## E10 — Panel de pruebas y tolerancia (pruebas con otros equipos)
+
+| ID | Historia | Prueba de aceptación | Estándar | Estado |
+| --- | --- | --- | --- | --- |
+| H10.1 | Aceptar manifiestos que omiten campos anulables (caso real EQ01: `E-MANIFEST` por `requestId`, `parts`) | `PackageTests.Missing_nullable_fields_are_treated_as_null`, `TolerancePanelTests` (bandeja e `inverse`) | §9.5, ADR 0014 | ✅ |
+| H10.2 | Registrar todo rechazo de la API y cada error al enviar o delegar, y mostrarlos en «Rechazos recientes» | `TolerancePanelTests.Rejections_are_recorded_for_diagnostics` | §14 | ✅ |
+| H10.3 | Aceptación automática opcional de paquetes válidos | `TolerancePanelTests.Auto_accept_moves_valid_packages_to_consultas` | §15 | ✅ |
+| H10.4 | Bandeja con vista previa segura de texto e imagen y botón Descifrar | bUnit `PreviewTests`, `UiHostTests.Inline_content_is_safe`, recorrido con Playwright | §15, §11.4 | ✅ |
+| H10.5 | Página «Enviar a otro equipo» (crear y enviar, o enviar un .zip) | `UiHostTests`, recorrido con Playwright EQ08 → EQ09 | §11.3 | ✅ |
+| H10.6 | Reenviar AESGCM/CHACHA20 conservando el `packetId` (AAD) para que el dueño pueda descifrar | `Forwarding_aad_bound_algorithm_keeps_packet_id`, `Forwarded_AESGCM_package_can_be_decrypted_by_third_party` | §4.2 vs §9.6, ADR 0015 | ✅ |
+| H10.7 | Confirmar con EQ01 el envío de paquetes tolerantes y el descifrado de paquetes reenviados | Prueba integrada | — | 🖐 |
+
 ## Verificación manual pendiente (🖐)
 
 No se puede verificar en el entorno de desarrollo en la nube (Linux, sin Windows real, sin LAN real y sin los nodos de otros equipos). Las pruebas automáticas de Windows las corre la CI (`windows-latest`); las siguientes debe hacerlas el equipo:
@@ -125,6 +137,8 @@ Interpretaciones del estándar registradas como ADR en [`docs/arquitectura/decis
 | Validaciones #13/#14 en `inverse` | Se aplican a la petición (`timestampUtc`, `requestId`), no al paquete embebido | [0005](../arquitectura/decisiones/0005-inverse-timestamp-replay.md) | Propuesta |
 | Solicitante sin huella fijada | Se acepta y se registra como pendiente de confirmar (TOFU) | [0006](../arquitectura/decisiones/0006-unpinned-requester.md) | Propuesta |
 | `publicParameters` de un `result` | `{}`, como en el Anexo A.2 | [0007](../arquitectura/decisiones/0007-result-public-parameters.md) | Propuesta |
+| Campos anulables omitidos por otro nodo (`requestId`, `parts`, `keyRef`…) | Se tratan como `null`; EQ08 siempre los envía | [0014](../arquitectura/decisiones/0014-tolerant-nullable-fields.md) | Propuesta |
+| Reenvío de AESGCM/CHACHA20 (AAD = `packetId`) | Se conserva el `packetId` al reenviar | [0015](../arquitectura/decisiones/0015-forward-keeps-aad-packetid.md) | Propuesta |
 | `valid: false` | `200` con `verification`, nunca `E-VERIFY-FAILED` | [0008](../arquitectura/decisiones/0008-verify-failed.md) | Aceptada |
 | Resultado de trabajo pedido por otro nodo / `targetNode` ajeno | `404 E-JOB-NOT-FOUND` / `400 E-REQUEST` | [0011](../arquitectura/decisiones/0011-job-result-access.md) | Propuesta |
 | Variantes SHA-3 y HMAC-SHA512 | No se ofrecen; `E-PARAMS` | [0013](../arquitectura/decisiones/0013-hmac-variants.md) | Aceptada |
@@ -136,3 +150,4 @@ Pendientes que dependen de otros equipos (plan §7):
 - [ ] Coordinador, repositorio compartido y fecha de congelamiento del estándar.
 - [ ] Red de la prueba integrada (¿permite broadcast?).
 - [ ] ¿Los 30 registros pueden ser semilla o deben venir de intercambios reales?
+- [ ] Avisar a EQ01 que §9.5 pide enviar los campos nulos (`"requestId": null`, `"parts": null`) y proponer al coordinador aclarar §9.5 y la contradicción §4.2/§9.6 (ADR 0014 y 0015).

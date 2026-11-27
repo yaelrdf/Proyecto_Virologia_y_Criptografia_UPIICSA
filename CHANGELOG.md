@@ -4,6 +4,20 @@ Todos los cambios relevantes del nodo EQ08 se documentan aquí. El formato sigue
 
 ## [Sin publicar]
 
+### Panel de pruebas y tolerancia (posterior a la fase 9)
+
+#### Agregado
+
+- Página **Enviar a otro equipo**: crea un paquete (local o delegado) y lo envía a la bandeja de un nodo confirmado, o envía un .zip existente. Muestra el historial de envíos y errores.
+- Página **Bandeja**: lista de paquetes recibidos con visor, vista previa segura de texto e imagen (detectada por bytes; nunca HTML ni SVG), botón **Descifrar** (`inverse` local o delegado) y apertura de resultados dirigidos a este nodo.
+- Aceptación automática opcional de paquetes válidos (Bandeja y Ajustes; columna `Settings.AutoAcceptInbox`).
+- Diagnóstico: todo rechazo de la API (`api.rejected`) y cada error al enviar o delegar queda en la bitácora, y se muestra en «Rechazos recientes».
+
+#### Corregido
+
+- Los paquetes de nodos que omiten campos anulables (`requestId`, `parts`, `keyRef`, `verification`, `resultEnvelope`) ya no se rechazan con `E-MANIFEST` (ADR 0014). Era el caso real de EQ01.
+- Al reenviar paquetes AESGCM/CHACHA20 se conserva el `packetId` (su AAD), para que el dueño pueda descifrarlos (ADR 0015).
+
 ### Fase 9 — Conformidad, vectores y documentación
 
 #### Agregado

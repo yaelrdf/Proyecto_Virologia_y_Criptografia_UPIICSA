@@ -180,6 +180,8 @@ Solo los nodos **en línea y confirmados** se usan para delegar algoritmos y par
 | Algoritmo «no disponible» en Operar | El dueño no está en el directorio, está fuera de línea o su huella no está confirmada | Sigue el motivo que muestra la pantalla |
 | `E-PARAMS` con HMAC | Clave de menos de 32 bytes o no Base64 | Usa **Generar clave** |
 | La interfaz responde 403 | Entraste desde una IP que no es privada | Usa la IP de la LAN; para pruebas, `CC_Node__UiLanOnly=false` |
+| Otro equipo dice que EQ08 rechaza su paquete (`E-MANIFEST`, `E-SIGNATURE`…) | Diferencias de interpretación del estándar | Abre **Bandeja → Rechazos recientes**: muestra la ruta, la IP, el nodo, el código y el detalle exactos para compartir con ese equipo |
+| `E-PARAMS: No se pudo descifrar` al descifrar AESGCM/CHACHA20 reenviado | El paquete se reenvió con un `packetId` nuevo y se perdió el AAD | Reenvíalo desde EQ08 (conserva el `packetId`, ADR 0015) o pide el paquete original |
 | La interfaz se ve sin estilos | Se ejecutó desde `bin/` de una versión anterior | Usa el binario publicado o actualiza a la versión actual |
 
 ## 9. Dos nodos en una sola máquina (demo o pruebas)

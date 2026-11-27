@@ -72,7 +72,7 @@ dotnet run --project src\CentroCiber.Web
 .\scripts\firewall-windows.ps1 -Team 8   # como Administrador
 ```
 
-Abre **http://localhost:5008**. En el primer arranque se crean `data/identidad.pfx` (RSA-2048, `CN=EQ08`) y `data/centrociber.db` con 38 registros de semilla.
+Abre **http://localhost:5008**. Para probar con otros equipos usa **Enviar** (crear y mandar paquetes a su bandeja) y **Bandeja** (ver lo recibido con vista previa de texto o imagen, y descifrar). En el primer arranque se crean `data/identidad.pfx` (RSA-2048, `CN=EQ08`) y `data/centrociber.db` con 38 registros de semilla.
 
 Para una demo con dos nodos en la misma máquina, usa `scripts/run-two-nodes.sh` o `scripts/run-two-nodes.ps1`. Para probar la delegación sin otros equipos: `dotnet run --project tools/CentroCiber.MockNode -- --port 5001`, que simula a EQ01 con AESGCM.
 

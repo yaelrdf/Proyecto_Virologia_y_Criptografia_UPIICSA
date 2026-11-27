@@ -171,7 +171,19 @@ sequenceDiagram
 
 **Reenviar a una bandeja ajena** (§11.3) usa `PackageForwarder`: genera un nuevo `packetId` y `timestampUtc`, pone `sourceNode = EQ08` con el certificado propio, vuelve a firmar y conserva `datos.enc`, `publicParameters`, `keyRef` y `producerNode`.
 
-### 4.6 Descubrimiento
+### 4.6 Panel de pruebas: Enviar y Bandeja
+
+- **Enviar** (`/enviar`): `OperationsService.ForwardAsync` (local o delegado) seguido de `SendToInboxAsync` a un nodo confirmado y en línea, o el envío directo de un .zip. Los resultados y los errores del receptor quedan en la bitácora (`outbox.sent`, `delegate.error`).
+- **Bandeja** (`/bandeja`): lista de `Requests` y visor.
+  - Para `HASHSHA`, `HMACSHA256` y `DIGITALSIG`, `datos.enc` es el original (§4.3) y se muestra directo.
+  - Para los demás algoritmos se pide la clave (formulario desde el perfil) y se ejecuta `inverse`.
+  - Un `result` dirigido a EQ08 se abre con la llave propia.
+- **Vista previa segura** (`PreviewKind`): las imágenes se detectan por sus bytes (PNG, JPEG, GIF, BMP); el texto se sirve como `text/plain` con `nosniff`; HTML y SVG nunca se muestran como tales. Endpoints `/descargas/datos/{paquete|solicitud}/{id}?inline=true` y `/descargas/original/{id}?inline=true`.
+- **Tolerancia** (ADR 0014): `ParseManifest` trata como `null` los campos anulables ausentes.
+- **Diagnóstico**: `ProtocolApi.WriteProblemAsync` registra cada rechazo (`api.rejected`) con ruta, IP, `X-CC-Node`, código y detalle.
+- **Reenvío y AAD** (ADR 0015): `PackageForwarder` conserva el `packetId` en AESGCM y CHACHA20.
+
+### 4.7 Descubrimiento
 
 - `BeaconService` envía `CC-BEACON` al iniciar y cada 30 s a `255.255.255.255:5099` y al broadcast de cada interfaz, con la IP de la interfaz de salida. Al apagarse envía `offline`. El socket usa `ReuseAddress` y `EnableBroadcast`.
 - `DiscoveryPeer.OnBeaconAsync` descarta los anuncios propios o de otra versión y llama a `NodeDirectory.ObserveAsync`, que **verifica** con `GET /api/status` y `/api/certificate`: el CN debe ser el `nodeId` y la huella debe coincidir con la anunciada. Además guarda en caché el perfil `/api/algorithms`.

@@ -5,7 +5,7 @@
 | Motor | SQLite 3 mediante EF Core 10 (`Microsoft.EntityFrameworkCore.Sqlite`) ([ADR 0003](../arquitectura/decisiones/0003-sqlite.md)) |
 | Archivo | `data/centrociber.db` (configurable con `CC_Node__DataPath` / `CC_Node__DatabaseFileName`) |
 | Esquema | `src/CentroCiber.Infrastructure/Data/CentroCiberDbContext.cs` |
-| Migraciones | `src/CentroCiber.Infrastructure/Data/Migrations/` (`InitialCreate`), aplicadas al arrancar |
+| Migraciones | `src/CentroCiber.Infrastructure/Data/Migrations/` (`InitialCreate`, `AddAutoAcceptInbox`), aplicadas al arrancar |
 | Semilla | `src/CentroCiber.Infrastructure/Data/SeedData.cs`: **38 registros** (mínimo del curso: 30) |
 
 Documentos:
