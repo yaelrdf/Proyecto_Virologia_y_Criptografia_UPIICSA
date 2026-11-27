@@ -1,0 +1,249 @@
+@page "/enviar"
+@inject OperationsService Ops
+@inject ProfileCatalog Profiles
+@inject NodeDirectory Directory
+@inject PackageLibrary Library
+@inject AuditService Audit
+
+<PageTitle>Enviar · Atalaya</PageTitle>
+<h1>Enviar a otro equipo</h1>
+<p class="subtitulo">Panel de pruebas: crea un paquete (local o con el nodo dueño del algoritmo) y envíalo a la bandeja de otro nodo, o envía un .zip que ya tengas. Los paquetes se re-firman con la identidad de este nodo (§9.6).</p>
+
+@if (targets.Count == 0)
+{
+    <div class="alerta warn">No hay nodos en línea con huella confirmada. Agrégalos y confírmalos en <a href="/nodos">Nodos</a>.</div>
+}
+
+<div class="grid">
+    <div class="card">
+        <label for="destino">Destino</label>
+        <select id="destino" @bind="target">
+            <option value="">Elige un nodo…</option>
+            @foreach (var n in targets)
+            {
+                <option value="@n.NodeId">@n.NodeId · @n.Ip:@n.HttpPort</option>
+            }
+        </select>
+
+        <label>Qué enviar</label>
+        <div class="row" role="radiogroup">
+            <label class="hint"><input type="radio" name="tipo" checked="@(!existing)" @onchange="() => existing = false" /> Crear paquete</label>
+            <label class="hint"><input type="radio" name="tipo" checked="@existing" @onchange="() => existing = true" /> Un .zip existente</label>
+        </div>
+
+        @if (!existing)
+        {
+            <label for="alg">Algoritmo</label>
+            <select id="alg" value="@algCode" @onchange="OnAlgorithmChanged">
+                @foreach (var a in availability)
+                {
+                    <option value="@a.Algorithm.Code">@a.Algorithm.Id. @a.Algorithm.Code (@(a.IsLocal ? "local" : a.ProviderNode ?? "sin proveedor"))@(a.Available ? "" : " · no disponible")</option>
+                }
+            </select>
+            @if (current is not null && !current.Available)
+            {
+                <div class="alerta warn">@current.Reason</div>
+            }
+            <label>Contenido</label>
+            <div class="row" role="radiogroup">
+                <label class="hint"><input type="radio" name="modo" checked="@(mode == "text")" @onchange='() => mode = "text"' /> Texto</label>
+                <label class="hint"><input type="radio" name="modo" checked="@(mode == "file")" @onchange='() => mode = "file"' /> Archivo</label>
+                <label class="hint"><input type="radio" name="modo" checked="@(mode == "image")" @onchange='() => mode = "image"' /> Imagen</label>
+            </div>
+            @if (mode == "text")
+            {
+                <textarea @bind="text" placeholder="Escribe el mensaje…" aria-label="Mensaje"></textarea>
+            }
+            else
+            {
+                <InputFile OnChange="OnPayload" accept="@(mode == "image" ? "image/*" : null)" />
+                @if (payloadName is not null)
+                {
+                    <p class="hint">@payloadName (@payload?.Length bytes)</p>
+                }
+            }
+        }
+        else
+        {
+            <label>Subir .zip</label>
+            <InputFile OnChange="OnZip" accept=".zip" />
+            <label for="consulta">o tomarlo de Consultas</label>
+            <select id="consulta" @bind="libraryId">
+                <option value="0">—</option>
+                @foreach (var p in library)
+                {
+                    <option value="@p.Id">@p.FileName (@p.Origin)</option>
+                }
+            </select>
+            @if (zipName is not null)
+            {
+                <p class="hint">@zipName (@zip?.Length bytes)</p>
+            }
+        }
+    </div>
+
+    <div class="card">
+        @if (!existing)
+        {
+            <h2 style="margin-top:0">Parámetros</h2>
+            <AlgorithmForm Profile="profile" Operation="forward" OptionValues="options" SecretValues="secrets" />
+        }
+        <div class="row" style="margin-top:16px">
+            <button class="btn" disabled="@(busy || string.IsNullOrEmpty(target) || (!existing && current?.Available != true))" @onclick="SendAsync">
+                @(busy ? "Enviando…" : existing ? "Enviar .zip" : "Crear y enviar")
+            </button>
+        </div>
+        @if (error is not null)
+        {
+            <div class="alerta error" role="alert">@error</div>
+        }
+        @if (receipt is not null)
+        {
+            <div class="alerta ok">@receipt</div>
+        }
+    </div>
+</div>
+
+<h2>Enviados recientemente</h2>
+<div class="tabla"><table>
+    <thead><tr><th>UTC</th><th>Evento</th><th>Destino</th><th>Código</th><th>Detalle</th></tr></thead>
+    <tbody>
+        @if (history.Count == 0)
+        {
+            <tr><td colspan="5">Aún no se ha enviado nada.</td></tr>
+        }
+        @foreach (var a in history)
+        {
+            <tr>
+                <td>@a.TimestampUtc.ToString("MM-dd HH:mm:ss", System.Globalization.CultureInfo.InvariantCulture)</td>
+                <td><span class="badge @(a.Event == AuditService.EventOutboxSent ? "ok" : "error")">@(a.Event == AuditService.EventOutboxSent ? "enviado" : "error")</span></td>
+                <td>@a.NodeId</td><td>@a.Code</td><td>@a.Detail</td>
+            </tr>
+        }
+    </tbody>
+</table></div>
+
+@code {
+    private IReadOnlyList<NodeEntity> targets = [];
+    private IReadOnlyList<ProviderAvailability> availability = [];
+    private IReadOnlyList<PackageEntity> library = [];
+    private IReadOnlyList<AuditLogEntity> history = [];
+    private ProviderAvailability? current;
+    private AlgorithmProfile? profile;
+    private string target = string.Empty;
+    private string algCode = AlgorithmCatalog.HashSha;
+    private bool existing;
+    private string mode = "text";
+    private string text = string.Empty;
+    private byte[]? payload;
+    private string? payloadName;
+    private byte[]? zip;
+    private string? zipName;
+    private int libraryId;
+    private Dictionary<string, string> options = [];
+    private Dictionary<string, string> secrets = [];
+    private bool busy;
+    private string? error;
+    private string? receipt;
+
+    protected override async Task OnInitializedAsync()
+    {
+        targets = (await Directory.ListAsync()).Where(n => !n.IsSelf && n.TrustState == TrustStates.Pinned && n.Status == "online").ToList();
+        availability = await Ops.AllAvailabilityAsync();
+        library = (await Library.ListAsync()).Where(p => !p.IsSample && p.StoragePath is not null).ToList();
+        await SelectAsync(algCode);
+        await LoadHistoryAsync();
+    }
+
+    private async Task LoadHistoryAsync() =>
+        history = (await Audit.RecentByEventAsync([AuditService.EventOutboxSent, AuditService.EventDelegateError], 15)).ToList();
+
+    private async Task OnAlgorithmChanged(ChangeEventArgs e) => await SelectAsync(e.Value?.ToString() ?? algCode);
+
+    private async Task SelectAsync(string c)
+    {
+        algCode = c;
+        current = availability.FirstOrDefault(a => a.Algorithm.Code == c);
+        (profile, _) = await Profiles.GetAsync(c);
+        options = [];
+        secrets = [];
+    }
+
+    private async Task OnPayload(InputFileChangeEventArgs e) => (payload, payloadName) = (await Read(e.File), e.File.Name);
+
+    private async Task OnZip(InputFileChangeEventArgs e)
+    {
+        (zip, zipName) = (await Read(e.File), e.File.Name);
+        libraryId = 0;
+    }
+
+    private static async Task<byte[]> Read(IBrowserFile file)
+    {
+        using var ms = new MemoryStream();
+        await using var s = file.OpenReadStream(ProtocolConstants.MaxBodyBytes);
+        await s.CopyToAsync(ms);
+        return ms.ToArray();
+    }
+
+    private async Task SendAsync()
+    {
+        busy = true;
+        error = receipt = null;
+        try
+        {
+            byte[] toSend;
+            string what;
+            if (existing)
+            {
+                if (libraryId > 0 && await Library.GetAsync(libraryId) is { } p)
+                {
+                    (toSend, what) = (await Library.ReadZipAsync(p), p.FileName);
+                }
+                else
+                {
+                    (toSend, what) = (zip ?? throw new InvalidOperationException("Sube un .zip o elige uno de Consultas."), zipName!);
+                }
+            }
+            else
+            {
+                var data = mode == "text" ? System.Text.Encoding.UTF8.GetBytes(text) : payload
+                    ?? throw new InvalidOperationException("Selecciona un archivo o escribe un mensaje.");
+                var outcome = await Ops.ForwardAsync(new ForwardRequest
+                {
+                    AlgorithmCode = algCode,
+                    Payload = data,
+                    PayloadMode = mode,
+                    OriginalFileName = mode == "text" ? ProtocolConstants.DefaultTextFileName : payloadName!,
+                    Options = options.Where(kv => !string.IsNullOrEmpty(kv.Value)).ToDictionary(),
+                    Secrets = secrets.Where(kv => !string.IsNullOrEmpty(kv.Value)).ToDictionary(),
+                });
+                if (outcome.Result.IsPending)
+                {
+                    throw new InvalidOperationException(outcome.Summary + " Envíalo desde Consultas cuando termine.");
+                }
+
+                (toSend, what) = (outcome.Result.Zip!, outcome.Result.FileName!);
+            }
+
+            var r = await Ops.SendToInboxAsync(target, toSend);
+            receipt = $"{what} → {target}: {r.Status} (packetId {r.PacketId}, {r.ReceivedAtUtc}).";
+            if (!existing && secrets.Count > 0)
+            {
+                receipt += " Comparte la clave con el otro equipo fuera de banda para que pueda descifrarlo.";
+            }
+        }
+        catch (ProtocolException ex)
+        {
+            error = $"{ex.Code}: {ex.Message}";
+        }
+        catch (Exception ex) when (ex is ProviderUnavailableException or InvalidOperationException)
+        {
+            error = ex.Message;
+        }
+        finally
+        {
+            busy = false;
+            await LoadHistoryAsync();
+        }
+    }
+}
