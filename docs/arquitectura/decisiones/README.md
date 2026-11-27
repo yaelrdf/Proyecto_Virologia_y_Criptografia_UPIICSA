@@ -17,3 +17,4 @@ Cada decisión importante, o cada interpretación de algo ambiguo en el estánda
 | [0011](0011-job-result-access.md) | Acceso al resultado de un trabajo y destino incorrecto | **Propuesta** |
 | [0012](0012-certificate-notbefore.md) | `NotBefore` del certificado adelantado 10 minutos | Aceptada |
 | [0013](0013-hmac-variants.md) | Variantes y parámetros estrictos de HASHSHA y HMACSHA256 | Aceptada |
+| [0014](0014-tolerant-nullable-fields.md) | Campos anulables ausentes en manifiestos de otros nodos | **Propuesta** |

@@ -206,8 +206,8 @@ public sealed class PackageTests
     }
 
     [Theory] // Estándar §13.1 #5: campos faltantes o con formato inválido
-    [InlineData("remove", "keyRef")]
-    [InlineData("remove", "requestId")]
+    [InlineData("remove", "packetId")]
+    [InlineData("remove", "publicParametersSha256")]
     [InlineData("set", "packetId")]
     [InlineData("set", "sourceNode")]
     [InlineData("set", "timestampUtc")]
@@ -398,5 +398,65 @@ public sealed class PackageTests
     {
         var zip = ZipTools.EditManifest(HashPackage().Zip, m => m["extensionFutura"] = "x");
         (await Validator.ValidateAsync(zip, PackageValidationOptions.Inbox, default)).ShouldNotBeNull();
+    }
+
+    [Fact] // ADR 0014: otro nodo omite los campos anulables (caso real de EQ01: sin requestId ni parts)
+    public async Task Missing_nullable_fields_are_treated_as_null()
+    {
+        var zip = ZipTools.EditManifest(HashPackage().Zip, m =>
+        {
+            m.Remove("requestId");
+            m.Remove("parts");
+            m.Remove("keyRef");
+            m.Remove("verification");
+            m.Remove("resultEnvelope");
+        }, eq08);
+        var ok = await Validator.ValidateAsync(zip, PackageValidationOptions.Inbox, default);
+        ok.Manifest.RequestId.ShouldBeNull();
+        ok.Manifest.Parts.ShouldBeNull();
+        ok.Manifest.KeyRef.ShouldBeNull();
+    }
+
+    [Fact] // ADR 0014: un result sin verification es válido como paquete
+    public async Task Result_without_optional_fields_is_accepted()
+    {
+        var r = PackageBuilder.Build(new PackageContent
+        {
+            PacketType = "result",
+            AlgorithmCode = "HASHSHA",
+            AlgorithmName = "SHA-256",
+            Operation = "inverse",
+            PayloadMode = "file",
+            OriginalFileName = "a.txt",
+            OriginalSizeBytes = 4,
+            Data = "test"u8.ToArray(),
+        }, eq08, "127.0.0.1:5008", clock);
+        var zip = ZipTools.EditManifest(r.Zip, m =>
+        {
+            m.Remove("verification");
+            m.Remove("resultEnvelope");
+            m.Remove("requestId");
+        }, eq08);
+        (await Validator.ValidateAsync(zip, PackageValidationOptions.Inbox, default)).Manifest.Verification.ShouldBeNull();
+    }
+
+    [Fact] // §9.4: multipart sin parts sigue siendo E-MANIFEST aunque parts sea anulable
+    public async Task Multipart_without_parts_is_rejected()
+    {
+        var (inner, parts) = Multipart.Build([[1, 2]], Now);
+        var p = PackageBuilder.Build(new PackageContent
+        {
+            PacketType = "package",
+            AlgorithmCode = "LAGRANGESHAMIR",
+            AlgorithmName = "Shamir",
+            Operation = "forward",
+            PayloadMode = "multipart",
+            OriginalFileName = "s.bin",
+            OriginalSizeBytes = 2,
+            Data = inner,
+            Parts = parts,
+        }, eq08, "127.0.0.1:5008", clock);
+        var zip = ZipTools.EditManifest(p.Zip, m => m.Remove("parts"), eq08);
+        (await ErrorOf(zip)).ShouldBe(ErrorCodes.Manifest);
     }
 }

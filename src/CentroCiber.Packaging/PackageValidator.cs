@@ -74,16 +74,22 @@ public sealed class PackageValidator(TimeProvider clock, IReplayGuard replay, IT
 {
     public const string SeenKindPacket = "packet";
 
+    /// <summary>Campos que DEBEN venir con valor (§9.5).</summary>
     private static readonly string[] RequiredFields =
     [
-        "version", "packetType", "packetId", "requestId", "sourceNode", "sourceTeam", "sourceIp", "producerNode",
+        "version", "packetType", "packetId", "sourceNode", "sourceTeam", "sourceIp", "producerNode",
         "timestampUtc", "algorithmId", "algorithmCode", "algorithmName", "operation", "operationName", "payloadMode",
         "originalFileName", "originalExtension", "originalSizeBytes", "contentType", "encryptedSha256",
-        "encryptedSizeBytes", "parts", "keyRef", "publicParameters", "publicParametersSha256",
+        "encryptedSizeBytes", "publicParameters", "publicParametersSha256",
         "certificateThumbprintSha256", "signatureAlgorithm", "manifestSignatureBase64",
     ];
 
-    private static readonly string[] ResultOnlyFields = ["verification", "resultEnvelope"];
+    /// <summary>
+    /// Campos anulables (<c>requestId</c>, <c>parts</c>, <c>keyRef</c>, y en <c>result</c> <c>verification</c> y
+    /// <c>resultEnvelope</c>): si otro nodo los omite se tratan como <c>null</c> (ADR 0014). Ninguno entra en la
+    /// cadena de firma §8.4. EQ08 siempre los envía.
+    /// </summary>
+    public static readonly IReadOnlyList<string> NullableFields = ["requestId", "parts", "keyRef", "verification", "resultEnvelope"];
 
     private static readonly string[] PayloadModes =
     [
@@ -296,12 +302,6 @@ public sealed class PackageValidator(TimeProvider clock, IReplayGuard replay, IT
             }
 
             var missing = RequiredFields.Where(f => !root.TryGetProperty(f, out _)).ToList();
-            if (root.TryGetProperty("packetType", out var pt) && pt.ValueKind == JsonValueKind.String
-                && pt.GetString() == ProtocolConstants.PacketTypeResult)
-            {
-                missing.AddRange(ResultOnlyFields.Where(f => !root.TryGetProperty(f, out _)));
-            }
-
             if (missing.Count > 0)
             {
                 throw new ProtocolException(ErrorCodes.Manifest, "Faltan campos obligatorios: " + string.Join(", ", missing) + ".");
