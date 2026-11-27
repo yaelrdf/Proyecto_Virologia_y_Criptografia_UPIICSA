@@ -1,0 +1,103 @@
+name: Release
+
+# Publica una GitHub Release con los binarios autocontenidos al subir un tag vX.Y.Z.
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Tag existente a publicar (p. ej. v1.1.0)"
+        required: true
+
+permissions:
+  contents: write
+
+env:
+  DOTNET_CLI_TELEMETRY_OPTOUT: "1"
+  DOTNET_NOLOGO: "1"
+  TAG: ${{ github.event.inputs.tag || github.ref_name }}
+
+jobs:
+  test:
+    name: Pruebas (${{ matrix.os }})
+    strategy:
+      fail-fast: true
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ env.TAG }}
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "10.0.x"
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: python -m pip install -r tests/interop/requirements.txt
+      - run: dotnet build CentroCiber.slnx -c Release -warnaserror
+      - run: dotnet test CentroCiber.slnx -c Release --no-build
+      - run: python -m pytest tests/interop -q
+
+  publish:
+    name: Publicar ${{ matrix.rid }}
+    needs: test
+    strategy:
+      matrix:
+        include:
+          - rid: linux-x64
+            os: ubuntu-latest
+          - rid: win-x64
+            os: windows-latest
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ env.TAG }}
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "10.0.x"
+      - name: dotnet publish
+        run: dotnet publish src/CentroCiber.Web/CentroCiber.Web.csproj -c Release -r ${{ matrix.rid }} --self-contained true -p:PublishSingleFile=false -o publish/centrociber-eq08-${{ matrix.rid }}
+      - uses: actions/upload-artifact@v4
+        with:
+          name: centrociber-eq08-${{ matrix.rid }}
+          path: publish/centrociber-eq08-${{ matrix.rid }}
+
+  release:
+    name: Crear GitHub Release
+    needs: publish
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ env.TAG }}
+      - uses: actions/download-artifact@v4
+        with:
+          path: dist
+      - name: Empaquetar zips
+        run: |
+          cd dist
+          for d in centrociber-eq08-*; do (cd "$d" && zip -qr "../${d}-${TAG}.zip" .); done
+          sha256sum *.zip > SHA256SUMS.txt
+          ls -la
+      - name: Notas desde el CHANGELOG
+        run: |
+          version="${TAG#v}"
+          awk -v v="$version" '
+            $0 ~ "^## \\[" v "\\]" {on=1; next}
+            on && /^## \[/ {exit}
+            on {print}
+          ' CHANGELOG.md > notes.md
+          if [ ! -s notes.md ]; then echo "Versión $version del nodo EQ08 (Atalaya)." > notes.md; fi
+          printf '\n\nBinarios autocontenidos: no requieren .NET instalado. Define `CC_PFX_PASSWORD` antes de ejecutar (ver el Manual de instalación).\n' >> notes.md
+      - uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ env.TAG }}
+          name: Atalaya EQ08 ${{ env.TAG }}
+          body_path: notes.md
+          files: |
+            dist/*.zip
+            dist/SHA256SUMS.txt
