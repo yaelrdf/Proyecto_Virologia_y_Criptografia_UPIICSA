@@ -2,7 +2,7 @@
 
 <p align="center"><img src="docs/assets/logo.svg" alt="Logotipo de Atalaya EQ08" width="96" /></p>
 
-Nodo **`EQ08`** (Equipo 8) del **Centro de Ciberseguridad Comunitario**, proyecto de la materia *Virología y Criptografía* (UPIICSA, 2027-1). Cada equipo opera un nodo. Los nodos se encuentran solos en la red local, se piden entre sí la ejecución de algoritmos criptográficos e intercambian paquetes `.zip` firmados, según el [Estándar de Comunicación v2.0](docs/estandar/Estandar_Comunicacion_v2.0.md).
+**Versión 1.1.0** · Nodo **`EQ08`** (Equipo 8) del **Centro de Ciberseguridad Comunitario**, proyecto de la materia *Virología y Criptografía* (UPIICSA, 2027-1). Cada equipo opera un nodo. Los nodos se encuentran solos en la red local, se piden entre sí la ejecución de algoritmos criptográficos e intercambian paquetes `.zip` firmados, según el [Estándar de Comunicación v2.0](docs/estandar/Estandar_Comunicacion_v2.0.md).
 
 «Atalaya» es el nombre que proponemos para el producto. Está pendiente de aprobación del equipo; ver el [Manual de identidad](docs/manuales/Manual_Identidad.md).
 
@@ -40,6 +40,20 @@ flowchart LR
 ```
 
 Hay más detalle en el [Manual técnico](docs/manuales/Manual_Tecnico.md).
+
+## Releases
+
+Cada versión se publica como [GitHub Release](https://github.com/yaelrdf/Proyecto_Virologia_y_Criptografia_UPIICSA/releases) con dos binarios autocontenidos, que no necesitan .NET instalado, y su `SHA256SUMS.txt`:
+
+- `centrociber-eq08-win-x64-vX.Y.Z.zip`
+- `centrociber-eq08-linux-x64-vX.Y.Z.zip`
+
+La publicación la hace el workflow [`release.yml`](.github/workflows/release.yml) al subir un tag `vX.Y.Z`.
+
+| Versión | Rama | Novedades |
+| --- | --- | --- |
+| **1.1.0** | `release/v1.1-relay-compat` | Panel de pruebas (Enviar y Bandeja), diagnóstico de rechazos, tolerancia a manifiestos y resultados de otros equipos, y compatibilidad revisada con [RelayCryptoNode (EQ06)](docs/interoperabilidad/RelayCryptoNode.md) |
+| 1.0.0 | `claude/blissful-thompson-nc8dgj` | Las 9 fases del plan |
 
 ## Requisitos
 
@@ -149,7 +163,7 @@ docs/                         Estándar, plan, manuales, API, BD, backlog, ADR, 
 | [API](docs/api/README.md) · [OpenAPI](docs/api/openapi.json) | Endpoints con ejemplos `curl` |
 | [Base de datos](docs/base-de-datos/README.md) | Diagrama ER, diccionario de datos, semilla |
 | [Decisiones de arquitectura (ADR)](docs/arquitectura/decisiones/README.md) | Decisiones e interpretaciones del estándar |
-| [Interoperabilidad](docs/interoperabilidad/README.md) · [Matriz](docs/interoperabilidad/Matriz.md) · [Conformidad §16.2](docs/interoperabilidad/Conformidad.md) | Pruebas contra otros equipos |
+| [Interoperabilidad](docs/interoperabilidad/README.md) · [Matriz](docs/interoperabilidad/Matriz.md) · [Conformidad §16.2](docs/interoperabilidad/Conformidad.md) · [RelayCryptoNode (EQ06)](docs/interoperabilidad/RelayCryptoNode.md) | Pruebas contra otros equipos |
 | [Vectores EQ08](vectores/EQ08/README.md) | Vectores públicos §16.1 |
 | [Contribuir](CONTRIBUTING.md) · [Código de conducta](CODE_OF_CONDUCT.md) · [Seguridad](SECURITY.md) · [Cambios](CHANGELOG.md) | Normas del repositorio |
 

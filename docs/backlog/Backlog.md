@@ -118,6 +118,18 @@ Estados: ⬜ Pendiente · 🟨 En curso · ✅ Hecha (verificada en Linux) · �
 | H10.6 | Reenviar AESGCM/CHACHA20 conservando el `packetId` (AAD) para que el dueño pueda descifrar | `Forwarding_aad_bound_algorithm_keeps_packet_id`, `Forwarded_AESGCM_package_can_be_decrypted_by_third_party` | §4.2 vs §9.6, ADR 0015 | ✅ |
 | H10.7 | Confirmar con EQ01 el envío de paquetes tolerantes y el descifrado de paquetes reenviados | Prueba integrada | — | 🖐 |
 
+## E11 — Compatibilidad con RelayCryptoNode (EQ06) y release 1.1.0
+
+| ID | Historia | Prueba de aceptación | Estándar | Estado |
+| --- | --- | --- | --- | --- |
+| H11.1 | Comparar la API, el manifiesto, los sobres y los flujos de RelayCryptoNode con EQ08 (solo lectura, sin copiar código) | [`RelayCryptoNode.md`](../interoperabilidad/RelayCryptoNode.md) | §10, §9, §8 | ✅ |
+| H11.2 | Exigir solo los campos firmados al recibir y completar los informativos | `PackageTests.Missing_informational_fields_are_defaulted_and_reported`, `Signed_fields_remain_required` | §9.5, ADR 0016 | ✅ |
+| H11.3 | Abrir resultados con el sobre en `resultado.enc`, la etiqueta pegada o un AAD alternativo | `ResultEnvelopeOpenerTests`, `DelegationTests.Delegation_tolerates_owner_variants` | §8.3, ADR 0017 | ✅ |
+| H11.4 | `supportedProtocolVersions`, `nodeVersion`, `notes` de los perfiles | `ProviderApiTests.Status_includes_algorithms_https_and_thumbprint`, `Foreign_status_and_profile_extensions_are_ignored` | §10.3, §10.4 | ✅ |
+| H11.5 | `cover` en Enviar y vista previa de `datos.enc` cuando es imagen | Compilación y pruebas de host de las páginas | §10.6 | ✅ |
+| H11.6 | Release 1.1.0: versión, CHANGELOG, workflow `release.yml` y tag `v1.1.0` | Ejecución del workflow en GitHub Actions | — | ✅ |
+| H11.7 | Prueba real EQ08 ↔ EQ06 en la LAN | Matriz de interoperabilidad | §16.3 | 🖐 |
+
 ## Verificación manual pendiente (🖐)
 
 No se puede verificar en el entorno de desarrollo en la nube (Linux, sin Windows real, sin LAN real y sin los nodos de otros equipos). Las pruebas automáticas de Windows las corre la CI (`windows-latest`); las siguientes debe hacerlas el equipo:
@@ -127,6 +139,7 @@ No se puede verificar en el entorno de desarrollo en la nube (Linux, sin Windows
 - **H8.10**: recorrido completo de la interfaz entre una laptop Windows y una Linux.
 - **H9.7**: otro equipo valida `vectores/EQ08/`.
 - **H9.8**: una persona ajena instala el nodo con el [manual](../manuales/Manual_Instalacion_Configuracion.md).
+- **H11.7**: prueba real con RelayCryptoNode (EQ06), según [RelayCryptoNode.md](../interoperabilidad/RelayCryptoNode.md) §3.
 
 ## Pendientes e interpretaciones
 

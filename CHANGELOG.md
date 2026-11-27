@@ -4,7 +4,26 @@ Todos los cambios relevantes del nodo EQ08 se documentan aquí. El formato sigue
 
 ## [Sin publicar]
 
-### Panel de pruebas y tolerancia (posterior a la fase 9)
+## [1.1.0] — 2026-11-27
+
+### Compatibilidad con RelayCryptoNode (EQ06)
+
+Se revisó [RelayCryptoNode](https://github.com/Vidruck/RelayCryptoNode) solo como referencia (licencia propietaria; no se copió código). El detalle está en [`docs/interoperabilidad/RelayCryptoNode.md`](docs/interoperabilidad/RelayCryptoNode.md).
+
+#### Agregado
+
+- `GET /api/status` publica `supportedProtocolVersions` (`["2.0"]`) y `nodeVersion`; la barra de estado muestra la versión.
+- Los perfiles ajenos pueden traer `notes`, y la interfaz las muestra.
+- **Enviar** pide la imagen portadora (`cover`) cuando el perfil del dueño la exige (`LSBSTEGO`). La **Bandeja** previsualiza `datos.enc` cuando es una imagen.
+- `MockNode`: opciones `--omit-nulls`, `--envelope-in-data` y `--append-tag` para imitar las variantes observadas en EQ01.
+- Workflow `release.yml`: al subir un tag `vX.Y.Z` prueba en Ubuntu y Windows, publica los binarios autocontenidos y crea la GitHub Release con las notas del CHANGELOG y `SHA256SUMS.txt`.
+
+#### Cambiado
+
+- Al recibir, solo los campos de la cadena de firma son obligatorios; los informativos omitidos se completan y se informan en la Bandeja (ADR 0016).
+- Los resultados se abren aunque traigan el sobre `CC-ENV-1` dentro de `resultado.enc`, la etiqueta GCM pegada o un AAD alternativo (`requestId`, `packetId` de origen) (ADR 0017).
+
+### Panel de pruebas y tolerancia
 
 #### Agregado
 
@@ -17,6 +36,8 @@ Todos los cambios relevantes del nodo EQ08 se documentan aquí. El formato sigue
 
 - Los paquetes de nodos que omiten campos anulables (`requestId`, `parts`, `keyRef`, `verification`, `resultEnvelope`) ya no se rechazan con `E-MANIFEST` (ADR 0014). Era el caso real de EQ01.
 - Al reenviar paquetes AESGCM/CHACHA20 se conserva el `packetId` (su AAD), para que el dueño pueda descifrarlos (ADR 0015).
+
+## [1.0.0] — 2026-11-26
 
 ### Fase 9 — Conformidad, vectores y documentación
 
@@ -120,3 +141,6 @@ Todos los cambios relevantes del nodo EQ08 se documentan aquí. El formato sigue
 #### Cambiado
 
 - `.gitignore` ampliado para PFX, bases de datos, datos, secretos y `.env`.
+
+[Sin publicar]: https://github.com/yaelrdf/Proyecto_Virologia_y_Criptografia_UPIICSA/compare/v1.1.0...HEAD
+[1.1.0]: https://github.com/yaelrdf/Proyecto_Virologia_y_Criptografia_UPIICSA/releases/tag/v1.1.0

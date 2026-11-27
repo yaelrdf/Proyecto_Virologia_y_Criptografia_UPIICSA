@@ -120,6 +120,14 @@ La matriz actual está en [Matriz.md](../interoperabilidad/Matriz.md): las combi
 
 <!-- TODO: lecciones del equipo (organización, coordinación con otros equipos, aprendizajes de criptografía) -->
 
+## 7 bis. Versión 1.1.0: pruebas con otros equipos
+
+- **Caso real con EQ01**: sus paquetes llegaban sin `requestId` ni `parts` y EQ08 los rechazaba con `E-MANIFEST`. Se corrigió (ADR 0014) y se agregó el diagnóstico de rechazos.
+- **Contradicción §4.2/§9.6**: AAD = `packetId` contra un `packetId` nuevo al reenviar. Se resolvió conservando el `packetId` en AESGCM y CHACHA20 (ADR 0015).
+- **Revisión de RelayCryptoNode (EQ06)**: solo lectura; su licencia es propietaria. Llevó a los ADR 0016 (solo campos firmados obligatorios) y 0017 (apertura tolerante de resultados). Ver [RelayCryptoNode.md](../interoperabilidad/RelayCryptoNode.md).
+- **Panel de pruebas**: páginas Enviar y Bandeja, con vista previa segura.
+- Los resultados de las pruebas de la versión 1.1.0 están en la descripción de la Release y en la CI (sección 4.3). <!-- TODO: copiar aquí el resumen de la ejecución de release.yml de v1.1.0 -->
+
 ## 8. Trabajo futuro
 
 - Prueba integrada con todos los equipos y llenado de la matriz §16.3.

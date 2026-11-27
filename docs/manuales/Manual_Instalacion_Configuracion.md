@@ -16,9 +16,17 @@ Este manual explica cómo instalar el nodo EQ08 en **Windows** y en **Linux**, a
 
 ## 2. Obtener el programa
 
-### Opción A — binario publicado (recomendado para la demo)
+### Opción A — GitHub Release (recomendado para la demo)
 
-Descarga el artefacto `centrociber-eq08-win-x64` o `centrociber-eq08-linux-x64` de la última ejecución de la CI (pestaña *Actions* del repositorio) y descomprímelo en una carpeta propia, por ejemplo `C:\Atalaya` o `~/atalaya`. Es **autocontenido**: no necesita .NET instalado.
+1. Entra a la página de *Releases* del repositorio y abre la última versión (por ejemplo, **Atalaya EQ08 v1.1.0**).
+2. Descarga `centrociber-eq08-win-x64-v1.1.0.zip` o `centrociber-eq08-linux-x64-v1.1.0.zip`.
+3. Opcional: verifica el archivo contra `SHA256SUMS.txt`.
+   - Linux: `sha256sum -c SHA256SUMS.txt --ignore-missing`
+   - Windows: `Get-FileHash .\centrociber-eq08-win-x64-v1.1.0.zip`
+4. Descomprímelo en una carpeta propia, por ejemplo `C:\Atalaya` o `~/atalaya`.
+5. En Linux, da permiso de ejecución: `chmod +x CentroCiber.Web`.
+
+Es **autocontenido**: no necesita .NET instalado. También se puede descargar el artefacto de la última ejecución de la CI (pestaña *Actions*).
 
 ### Opción B — publicarlo tú
 

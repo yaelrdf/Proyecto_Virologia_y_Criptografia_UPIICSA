@@ -18,8 +18,10 @@ curl -s $N/api/status
 ```
 
 ```json
-{"nodeId":"EQ08","teamNumber":8,"protocolVersion":"2.0","status":"online","acceptingPackages":true,"httpPort":5008,"httpsPort":5108,"algorithms":[{"algorithmId":15,"algorithmCode":"HASHSHA"},{"algorithmId":16,"algorithmCode":"HMACSHA256"}],"certificateThumbprintSha256":"0D54684120B1FB5FC08C606ABB27B0AD7DE000D65C7B19F5EE472148CA423EDF","serverTimeUtc":"2026-11-26T18:31:19Z"}
+{"nodeId":"EQ08","teamNumber":8,"protocolVersion":"2.0","status":"online","acceptingPackages":true,"httpPort":5008,"httpsPort":5108,"algorithms":[{"algorithmId":15,"algorithmCode":"HASHSHA"},{"algorithmId":16,"algorithmCode":"HMACSHA256"}],"certificateThumbprintSha256":"0D54684120B1FB5FC08C606ABB27B0AD7DE000D65C7B19F5EE472148CA423EDF","serverTimeUtc":"2026-11-26T18:31:19Z","supportedProtocolVersions":["2.0"],"nodeVersion":"1.1.0"}
 ```
+
+`supportedProtocolVersions` y `nodeVersion` son extensiones desde la versión 1.1.0. Los nodos que no las conocen las ignoran (§9.5); RelayCryptoNode (EQ06) publica un campo equivalente.
 
 ## `GET /api/certificate`
 
@@ -37,6 +39,8 @@ Devuelve los perfiles de `HASHSHA` y `HMACSHA256`: variantes, operaciones, secre
 curl -s $N/api/algorithms | python3 -m json.tool
 ```
 
+Los perfiles de otros nodos pueden traer campos extra (por ejemplo `notes` en EQ06). EQ08 los lee y muestra `notes` en el formulario.
+
 ## `GET /api/keys/{keyId}`
 
 EQ08 no tiene algoritmos con `keyId`, así que siempre responde `404 E-KEY-NOT-FOUND`.
@@ -53,7 +57,7 @@ curl -s -F "package=@EQ05_VIGENERE_20261125_162500_60303AE2.zip;type=application
 {"packetId":"550e8400-e29b-41d4-a716-446655440000","status":"Pendiente","receivedAtUtc":"2026-11-25T15:47:03Z"}
 ```
 
-Antes de aceptarlo se aplican las 14 validaciones de §13.1. Si el remitente tiene huella fijada y no coincide, responde `403 E-CERT-UNTRUSTED`. Si el nodo no acepta paquetes (Ajustes), responde `503 E-BUSY`.
+Antes de aceptarlo se aplican las 14 validaciones de §13.1. Desde la versión 1.1.0, si el remitente omite campos que no están firmados, se completan y se registran ([ADR 0016](../arquitectura/decisiones/0016-informational-fields-defaults.md)). Si el remitente tiene huella fijada y no coincide, responde `403 E-CERT-UNTRUSTED`. Si el nodo no acepta paquetes (Ajustes), responde `503 E-BUSY`.
 
 ## `POST /api/crypto/forward` y `/api/crypto/inverse` (§10.6)
 
