@@ -459,4 +459,28 @@ public sealed class PackageTests
         var zip = ZipTools.EditManifest(p.Zip, m => m.Remove("parts"), eq08);
         (await ErrorOf(zip)).ShouldBe(ErrorCodes.Manifest);
     }
+
+    [Fact] // ADR 0015: AESGCM/CHACHA20 usan AAD = packetId; al reenviar se conserva
+    public async Task Forwarding_aad_bound_algorithm_keeps_packet_id()
+    {
+        var aes = PackageBuilder.Build(new PackageContent
+        {
+            PacketType = "package",
+            AlgorithmCode = "AESGCM",
+            AlgorithmName = "AES-256-GCM",
+            Operation = "forward",
+            PayloadMode = "text",
+            OriginalFileName = "m.txt",
+            OriginalSizeBytes = 3,
+            Data = [1, 2, 3],
+            PublicParameters = new Dictionary<string, string> { ["keySizeBits"] = "256", ["nonceBase64"] = "AAAAAAAAAAAAAAAA", ["tagBase64"] = "AAAAAAAAAAAAAAAAAAAAAA==" },
+        }, eq01, "127.0.0.1:5001", clock);
+        var original = await Validator.ValidateAsync(aes.Zip, PackageValidationOptions.Inbox, default);
+        var fwd = PackageForwarder.Forward(original, eq08, "127.0.0.1:5008", clock);
+        fwd.Manifest.PacketId.ShouldBe(aes.Manifest.PacketId);
+        fwd.Manifest.SourceNode.ShouldBe("EQ08");
+        fwd.Manifest.ProducerNode.ShouldBe("EQ01");
+        (await new PackageValidator(clock, new MemoryReplayGuard(), trust).ValidateAsync(fwd.Zip, PackageValidationOptions.Inbox, default))
+            .Manifest.CertificateThumbprintSha256.ShouldBe(eq08.Thumbprint);
+    }
 }

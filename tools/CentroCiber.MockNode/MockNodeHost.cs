@@ -244,15 +244,46 @@ public sealed class MockNodeHost : IAsyncDisposable
         }
 
         var plaintext = new byte[package.Data.Length];
+        // §4.2: AAD = packetId. Herramienta de pruebas tolerante: también acepta "aadPacketId" en publicParameters.
+        var aadCandidates = new List<string> { m.PacketId };
+        if (m.PublicParameters.TryGetValue("aadPacketId", out var aadOverride) && aadOverride != m.PacketId)
+        {
+            aadCandidates.Add(aadOverride);
+        }
+
+        byte[] nonce;
+        byte[] tag;
         try
         {
-            using var aes = new AesGcm(key, 16);
-            aes.Decrypt(Convert.FromBase64String(m.PublicParameters["nonceBase64"]), package.Data,
-                Convert.FromBase64String(m.PublicParameters["tagBase64"]), plaintext, Encoding.UTF8.GetBytes(m.PacketId));
+            nonce = Convert.FromBase64String(m.PublicParameters["nonceBase64"]);
+            tag = Convert.FromBase64String(m.PublicParameters["tagBase64"]);
         }
-        catch (Exception ex) when (ex is CryptographicException or KeyNotFoundException or FormatException)
+        catch (Exception ex) when (ex is KeyNotFoundException or FormatException)
         {
-            throw new ProtocolException(ErrorCodes.Params, "No se pudo descifrar: clave o parámetros incorrectos.", ex);
+            throw new ProtocolException(ErrorCodes.Params, "Faltan nonceBase64/tagBase64 válidos.", ex);
+        }
+
+        var opened = false;
+        foreach (var aad in aadCandidates)
+        {
+            try
+            {
+                using var aes = new AesGcm(key, 16);
+                aes.Decrypt(nonce, package.Data, tag, plaintext, Encoding.UTF8.GetBytes(aad));
+                opened = true;
+                break;
+            }
+            catch (CryptographicException)
+            {
+                // Probar el siguiente AAD candidato.
+            }
+        }
+
+        if (!opened)
+        {
+            throw new ProtocolException(ErrorCodes.Params,
+                $"No se pudo descifrar: clave incorrecta o el AAD (packetId {m.PacketId}) no es el del cifrado; " +
+                "si el paquete se reenvió con un packetId nuevo, el AAD original se perdió (ADR 0015).");
         }
 
         var packetId = Identifiers.NewUuid();

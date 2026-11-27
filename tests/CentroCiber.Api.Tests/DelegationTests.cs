@@ -9,16 +9,16 @@ namespace CentroCiber.Api.Tests;
 
 public class DelegationTests
 {
-    private static readonly Dictionary<string, string> AesKey = new() { ["key"] = Convert.ToBase64String(Enumerable.Range(0, 32).Select(i => (byte)(i * 7)).ToArray()) };
+    internal static readonly Dictionary<string, string> AesKey = new() { ["key"] = Convert.ToBase64String(Enumerable.Range(0, 32).Select(i => (byte)(i * 7)).ToArray()) };
 
-    private static async Task TrustAsync(RealNode node, int port)
+    internal static async Task TrustAsync(RealNode node, int port)
     {
         var dir = node.Services.GetRequiredService<NodeDirectory>();
         var n = await dir.AddManualAsync("127.0.0.1", port);
         await dir.ConfirmAsync(n.NodeId);
     }
 
-    private static ForwardRequest AesForward(string text) => new()
+    internal static ForwardRequest AesForward(string text) => new()
     {
         AlgorithmCode = "AESGCM",
         Payload = Encoding.UTF8.GetBytes(text),
@@ -144,7 +144,8 @@ public class DelegationTests
         row.SourceNode.ShouldBe("EQ08");
         row.AlgorithmCode.ShouldBe("AESGCM");
         row.ManifestJson!.ShouldContain("\"producerNode\": \"EQ01\"");
-        receipt.PacketId.ShouldNotBe(fwd.Result.Manifest!.PacketId);
+        // ADR 0015: AESGCM usa AAD = packetId; al reenviar se conserva para que EQ01 pueda descifrar.
+        receipt.PacketId.ShouldBe(fwd.Result.Manifest!.PacketId);
     }
 }
 
@@ -202,5 +203,29 @@ public class EndToEndTests
         inv.Result.Manifest!.Verification!.Valid.ShouldBeTrue();
         inv.Result.Original.ShouldBe(original);
         inv.Stored!.Origin.ShouldBe(PackageOrigins.Result);
+    }
+
+    [Fact] // ADR 0015: caso real del panel de pruebas — EQ08 reenvía AESGCM de EQ01 a EQ09 y EQ09 lo descifra con EQ01
+    public async Task Forwarded_AESGCM_package_can_be_decrypted_by_third_party()
+    {
+        await using var mock = await MockNodeHost.StartAsync();
+        await using var eq08 = await RealNode.StartAsync(8);
+        await using var eq09 = await RealNode.StartAsync(9);
+        await DelegationTests.TrustAsync(eq08, mock.Port);
+        await DelegationTests.TrustAsync(eq08, eq09.HttpPort);
+        await DelegationTests.TrustAsync(eq09, mock.Port);
+        var fwd = await eq08.Services.GetRequiredService<OperationsService>().ForwardAsync(DelegationTests.AesForward("Hola EQ09 vía EQ01"));
+        var receipt = await eq08.Services.GetRequiredService<OperationsService>().SendToInboxAsync("EQ09", fwd.Result.Zip!);
+
+        var inbox = eq09.Services.GetRequiredService<InboxService>();
+        var row = (await inbox.ListAsync()).Single(r => r.PacketId == receipt.PacketId);
+        var zip = await inbox.ReadZipAsync(row);
+        var inv = await eq09.Services.GetRequiredService<OperationsService>().InverseAsync(new InverseRequest
+        {
+            AlgorithmCode = "AESGCM",
+            PackageZip = zip!,
+            Secrets = DelegationTests.AesKey,
+        });
+        inv.Result.Original.ShouldBe(Encoding.UTF8.GetBytes("Hola EQ09 vía EQ01"));
     }
 }

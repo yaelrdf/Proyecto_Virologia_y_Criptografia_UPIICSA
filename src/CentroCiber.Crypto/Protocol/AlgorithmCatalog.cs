@@ -38,6 +38,13 @@ public static class AlgorithmCatalog
     public const string HashSha = "HASHSHA";
     public const string HmacSha256 = "HMACSHA256";
     public const string AesGcm = "AESGCM";
+    public const string ChaCha20 = "CHACHA20";
+
+    /// <summary>
+    /// Algoritmos cuyo AAD es el <c>packetId</c> (§4.2). Al reenviarlos se conserva el <c>packetId</c>
+    /// para que el dueño pueda descifrarlos (ADR 0015).
+    /// </summary>
+    public static IReadOnlySet<string> PacketIdAadAlgorithms { get; } = new HashSet<string>(StringComparer.Ordinal) { AesGcm, ChaCha20 };
 
     private static readonly AlgorithmInfo[] Rows =
     [
