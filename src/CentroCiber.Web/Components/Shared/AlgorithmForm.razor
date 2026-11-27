@@ -3,6 +3,11 @@
 
 @if (Profile is not null)
 {
+    @if (!string.IsNullOrWhiteSpace(Profile.Notes))
+    {
+        <p class="hint">Nota del dueño: @Profile.Notes</p>
+    }
+
     @foreach (var option in Options)
     {
         <label for="opt-@option.Name">@option.Name <span class="hint">(opción pública)</span></label>

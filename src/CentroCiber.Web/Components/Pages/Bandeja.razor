@@ -121,11 +121,19 @@
                                     ImageUrl="@($"descargas/original/{rid}?inline=true")"
                                     DownloadUrl="@($"descargas/original/{rid}")" />
                 }
-                else if (isResultForMe)
+                else if (decrypted is null && CentroCiber.Web.Api.PreviewKind.ImageMime(data) is not null)
+                {
+                    <PackagePreview Data="data" ContentType="@manifest.ContentType" PayloadMode="image" FileName="@manifest.OriginalFileName"
+                                    Title="datos.enc es una imagen (p. ej. LSBSTEGO: puede llevar un mensaje oculto)"
+                                    ImageUrl="@($"descargas/datos/solicitud/{selected.Id}?inline=true")"
+                                    DownloadUrl="@($"descargas/datos/solicitud/{selected.Id}")" />
+                }
+
+                @if (!readable && decrypted is null && isResultForMe)
                 {
                     <button class="btn" @onclick="OpenResultAsync">Abrir resultado (sobre CC-ENV-1 para @Node.NodeId)</button>
                 }
-                else
+                else if (!readable && decrypted is null)
                 {
                     <h2>Descifrar para ver el contenido</h2>
                     @if (availability is not null)
