@@ -20,6 +20,7 @@
             }
             <h2>Recepción</h2>
             <label class="hint"><input type="checkbox" @bind="s.AcceptingPackages" /> Aceptar paquetes en la bandeja (si no, responde <code>E-BUSY</code>)</label>
+            <label class="hint"><input type="checkbox" @bind="s.AutoAcceptInbox" /> Aceptar automáticamente los paquetes válidos (panel de pruebas)</label>
             <h2>HTTPS</h2>
             <label class="hint"><input type="checkbox" @bind="s.HttpsEnabled" /> Ofrecer HTTPS en el puerto @Node.Options.EffectiveHttpsPort (requiere reiniciar)</label>
             <p class="hint">Estado actual: @(Node.HttpsActive ? "activo" : "inactivo").</p>

@@ -71,6 +71,7 @@ public static class SeedData
             EnabledVariants = "SHA-256,SHA-512,HMAC-SHA256",
             HttpsEnabled = true,
             AcceptingPackages = true,
+            AutoAcceptInbox = false,
             MaxPayloadBytes = ProtocolConstants.MaxBodyBytes,
             PfxFileName = "identidad.pfx",
         });

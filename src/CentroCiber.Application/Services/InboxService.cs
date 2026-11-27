@@ -31,7 +31,6 @@ public sealed class InboxService(
         var report = await validator.ValidateWithReportAsync(zip, PackageValidationOptions.Inbox, ct);
         if (report.Error is { } error)
         {
-            await audit.LogAsync("inbox.rejected", null, error.Code, error.Message, ct);
             await RecordInvalidAsync(zip, remoteIp, error, ct);
             throw error;
         }
@@ -40,9 +39,10 @@ public sealed class InboxService(
         var m = package.Manifest;
         var path = await node.Store.SaveAsync(FolderInbox, m.PacketId, zip, ct);
         var now = node.Clock.GetUtcNow();
+        InboxRequestEntity row;
         await using (var db = await dbf.CreateDbContextAsync(ct))
         {
-            db.Requests.Add(new InboxRequestEntity
+            row = new InboxRequestEntity
             {
                 PacketId = m.PacketId,
                 SourceNode = m.SourceNode,
@@ -55,11 +55,17 @@ public sealed class InboxService(
                 StoragePath = path,
                 ManifestJson = JsonSerializer.Serialize(m, ProtocolJson.Options),
                 ReceivedUtc = now.UtcDateTime,
-            });
+            };
+            db.Requests.Add(row);
             await db.SaveChangesAsync(ct);
         }
 
         await audit.LogAsync("inbox.received", m.SourceNode, null, $"{m.AlgorithmCode} {m.PacketId}", ct);
+        if ((await settings.GetAsync(ct)).AutoAcceptInbox)
+        {
+            // Panel de pruebas: la respuesta 202 sigue diciendo "Pendiente" (§10.5); la aceptación es local.
+            await AcceptAsync(row.Id, ct);
+        }
         hub.Publish(new Notifications.NodeEvent(Notifications.NodeEventKind.InboxReceived,
             $"Nueva solicitud de {m.SourceNode}: {m.AlgorithmCode} ({m.OperationName})", now, m.SourceNode));
         return new ReceiveResponse(m.PacketId, RequestStates.Pending, Identifiers.FormatTimestamp(now));

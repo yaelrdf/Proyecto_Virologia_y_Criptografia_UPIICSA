@@ -263,6 +263,9 @@ public class SettingsEntity
 
     public bool AcceptingPackages { get; set; }
 
+    /// <summary>Panel de pruebas: aceptar automáticamente los paquetes válidos de la bandeja.</summary>
+    public bool AutoAcceptInbox { get; set; }
+
     public long MaxPayloadBytes { get; set; }
 
     public required string PfxFileName { get; set; }

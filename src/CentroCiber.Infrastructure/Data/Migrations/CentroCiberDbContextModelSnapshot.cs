@@ -756,6 +756,9 @@ namespace CentroCiber.Infrastructure.Data.Migrations
                     b.Property<bool>("AcceptingPackages")
                         .HasColumnType("INTEGER");
 
+                    b.Property<bool>("AutoAcceptInbox")
+                        .HasColumnType("INTEGER");
+
                     b.Property<string>("EnabledVariants")
                         .IsRequired()
                         .HasColumnType("TEXT");
@@ -779,6 +782,7 @@ namespace CentroCiber.Infrastructure.Data.Migrations
                         {
                             Id = 1,
                             AcceptingPackages = true,
+                            AutoAcceptInbox = false,
                             EnabledVariants = "SHA-256,SHA-512,HMAC-SHA256",
                             HttpsEnabled = true,
                             MaxPayloadBytes = 52428800L,
