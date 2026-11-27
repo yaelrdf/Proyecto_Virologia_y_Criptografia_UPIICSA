@@ -17,6 +17,8 @@ Se ejecutan con `dotnet test`. La CI las corre también en Windows.
 | 2026-11-26 | EQ09 (instancia local) | EQ08 | HASHSHA | ✅ (EQ08 local) | ✅ (delegado, HTTPS) | ✅ | `EndToEndTests.Two_nodes_exchange_package_end_to_end(HASHSHA)` |
 | 2026-11-26 | EQ09 (instancia local) | EQ08 | HMACSHA256 | ✅ (EQ08 local) | ✅ (delegado, HTTPS) | ✅ | `EndToEndTests.Two_nodes_exchange_package_end_to_end(HMACSHA256)` |
 | 2026-11-26 | Python `cryptography` | — | Primitivas, paquetes, sobres | — | — | — | `tests/interop` (18 pruebas) |
+| 2026-11-27 | EQ08 | EQ01 simulado con variantes (nulos omitidos, sobre en `resultado.enc`, etiqueta pegada) | AESGCM | ✅ | ✅ | — | `DelegationTests.Delegation_tolerates_owner_variants` (ADR 0016/0017) |
+| 2026-11-27 | EQ08 → EQ09 → EQ01 simulado | — | AESGCM reenviado | ✅ | ✅ (descifrado por un tercero) | ✅ | `Forwarded_AESGCM_package_can_be_decrypted_by_third_party` (ADR 0015) |
 
 ## Prueba integrada con los demás equipos
 
@@ -29,7 +31,7 @@ Se llena durante la sesión con todos los nodos en la misma red (§17).
 | EQ03 | RSA, ECC | ⏳ | ⏳ | ⏳ | ⏳ | ⏳ | | |
 | EQ04 | DIFFIEHELLMAN, CAESAR (por confirmar) | ⏳ | ⏳ | ⏳ | ⏳ | ⏳ | | |
 | EQ05 | VIGENERE, XORASM | ⏳ | ⏳ | ⏳ | ⏳ | ⏳ | | |
-| EQ06 | LSBSTEGO, EUCLIDESAFFINE | ⏳ | ⏳ | ⏳ | ⏳ | ⏳ | | |
+| EQ06 | LSBSTEGO, EUCLIDESAFFINE | ⏳ | ⏳ | ⏳ | ⏳ | ⏳ | | Compatibilidad revisada con su código, 2026-11-27 ([RelayCryptoNode.md](RelayCryptoNode.md)); falta la prueba real |
 | EQ07 | MILLERRABIN, FISHERYATES | ⏳ | ⏳ | ⏳ | ⏳ | ⏳ | | |
 | — | 17–21 reservados | ⏳ (solo si alguien los anuncia) | ⏳ | — | — | — | | |
 

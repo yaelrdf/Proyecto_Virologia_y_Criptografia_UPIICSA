@@ -5,6 +5,7 @@ Cómo comprobar que EQ08 se entiende con los nodos de los demás equipos, siguie
 - [Matriz de interoperabilidad](Matriz.md): qué combinaciones se probaron, cuándo y con qué resultado (§16.3).
 - [Lista de conformidad §16.2](Conformidad.md), con evidencia.
 - [Vectores públicos de EQ08](../../vectores/EQ08/README.md) (§16.1).
+- [Compatibilidad con RelayCryptoNode (EQ06)](RelayCryptoNode.md).
 
 ## 1. Antes de la prueba integrada
 
