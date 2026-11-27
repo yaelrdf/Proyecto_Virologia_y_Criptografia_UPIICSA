@@ -2,6 +2,7 @@ using System.Security.Cryptography;
 using System.Security.Cryptography.X509Certificates;
 using System.Text;
 using System.Text.Json;
+using System.Text.Json.Nodes;
 using CentroCiber.Crypto.Identity;
 using CentroCiber.Crypto.Protocol;
 using CentroCiber.Crypto.Signing;
@@ -57,7 +58,8 @@ public sealed record ValidatedPackage(
     string CertificatePem,
     X509Certificate2 Certificate,
     bool SenderPinned,
-    IReadOnlyList<byte[]>? Parts);
+    IReadOnlyList<byte[]>? Parts,
+    IReadOnlyList<string>? OmittedFields = null);
 
 /// <summary>Reporte completo de validación (incluye el paso que falló).</summary>
 public sealed record ValidationReport(IReadOnlyList<ValidationStep> Steps, ValidatedPackage? Package, ProtocolException? Error)
@@ -74,15 +76,28 @@ public sealed class PackageValidator(TimeProvider clock, IReplayGuard replay, IT
 {
     public const string SeenKindPacket = "packet";
 
-    /// <summary>Campos que DEBEN venir con valor (§9.5).</summary>
+    /// <summary>
+    /// Campos que DEBEN venir con valor: los de la cadena de firma §8.4 y la firma misma. Sin ellos no se puede
+    /// verificar el paquete (ADR 0016).
+    /// </summary>
     private static readonly string[] RequiredFields =
     [
-        "version", "packetType", "packetId", "sourceNode", "sourceTeam", "sourceIp", "producerNode",
-        "timestampUtc", "algorithmId", "algorithmCode", "algorithmName", "operation", "operationName", "payloadMode",
-        "originalFileName", "originalExtension", "originalSizeBytes", "contentType", "encryptedSha256",
-        "encryptedSizeBytes", "publicParameters", "publicParametersSha256",
-        "certificateThumbprintSha256", "signatureAlgorithm", "manifestSignatureBase64",
+        "version", "packetType", "packetId", "sourceNode", "producerNode", "algorithmCode", "operation",
+        "timestampUtc", "encryptedSha256", "publicParametersSha256", "certificateThumbprintSha256", "manifestSignatureBase64",
     ];
+
+    /// <summary>
+    /// Campos informativos de §9.5 que no entran en la firma. Si otro nodo los omite se completan con un valor
+    /// deducible y se informan como «omitidos» (ADR 0016). EQ08 siempre los envía.
+    /// </summary>
+    public static readonly IReadOnlyList<string> InformationalFields =
+    [
+        "sourceTeam", "sourceIp", "algorithmId", "algorithmName", "operationName", "payloadMode", "originalFileName",
+        "originalExtension", "originalSizeBytes", "contentType", "encryptedSizeBytes", "publicParameters", "signatureAlgorithm",
+    ];
+
+    /// <summary>Valor centinela de <c>encryptedSizeBytes</c> omitido: se toma el tamaño real del contenido.</summary>
+    private const long UnknownSize = -1;
 
     /// <summary>
     /// Campos anulables (<c>requestId</c>, <c>parts</c>, <c>keyRef</c>, y en <c>result</c> <c>verification</c> y
@@ -155,7 +170,7 @@ public sealed class PackageValidator(TimeProvider clock, IReplayGuard replay, IT
 
             Begin(5, "manifest.json válido y completo");
             var manifestBytes = ZipSafety.ReadAll(archive.GetEntry(ProtocolConstants.EntryManifest)!);
-            var manifest = ParseManifest(manifestBytes);
+            var (manifest, omitted) = ParseManifestDetailed(manifestBytes);
             var dataEntryName = manifest.PacketType == ProtocolConstants.PacketTypeResult
                 ? ProtocolConstants.EntryResult
                 : ProtocolConstants.EntryData;
@@ -189,6 +204,11 @@ public sealed class PackageValidator(TimeProvider clock, IReplayGuard replay, IT
 
             Begin(8, "SHA-256 del contenido = encryptedSha256");
             var data = ZipSafety.ReadAll(archive.GetEntry(dataEntryName)!);
+            if (manifest.EncryptedSizeBytes == UnknownSize)
+            {
+                manifest = manifest with { EncryptedSizeBytes = data.LongLength };
+            }
+
             if (data.LongLength != manifest.EncryptedSizeBytes
                 || !CryptographicOperations.FixedTimeEquals(SHA256.HashData(data), Convert.FromHexString(manifest.EncryptedSha256)))
             {
@@ -267,7 +287,7 @@ public sealed class PackageValidator(TimeProvider clock, IReplayGuard replay, IT
                 steps.Add(new ValidationStep(14, description + " (no aplica: se valida requestId, ADR 0005)", true));
             }
 
-            return new ValidationReport(steps, new ValidatedPackage(zip, manifest, data, pem, cert, pinned is not null, parts), null);
+            return new ValidationReport(steps, new ValidatedPackage(zip, manifest, data, pem, cert, pinned is not null, parts, omitted), null);
         }
         catch (ProtocolException ex)
         {
@@ -289,26 +309,30 @@ public sealed class PackageValidator(TimeProvider clock, IReplayGuard replay, IT
     private static bool IsEncrypted(System.IO.Compression.ZipArchiveEntry entry) => entry.IsEncrypted;
 
     /// <summary>§13.1 #5: JSON válido, campos obligatorios y formatos de la sección 3.</summary>
-    public static Manifest ParseManifest(byte[] json)
+    public static Manifest ParseManifest(byte[] json) => ParseManifestDetailed(json).Manifest;
+
+    /// <summary>Como <see cref="ParseManifest"/>, e informa qué campos informativos omitió el remitente.</summary>
+    public static (Manifest Manifest, IReadOnlyList<string> Omitted) ParseManifestDetailed(byte[] json)
     {
         Manifest? manifest;
+        var omitted = new List<string>();
         try
         {
-            using var doc = JsonDocument.Parse(json);
-            var root = doc.RootElement;
-            if (root.ValueKind != JsonValueKind.Object)
+            if (JsonNode.Parse(json) is not JsonObject root)
             {
                 throw new ProtocolException(ErrorCodes.Manifest, "manifest.json debe ser un objeto JSON.");
             }
 
-            var missing = RequiredFields.Where(f => !root.TryGetProperty(f, out _)).ToList();
+            var missing = RequiredFields.Where(f => root[f] is null).ToList();
             if (missing.Count > 0)
             {
                 throw new ProtocolException(ErrorCodes.Manifest, "Faltan campos obligatorios: " + string.Join(", ", missing) + ".");
             }
 
-            if (root.GetProperty("publicParameters") is var pp
-                && (pp.ValueKind != JsonValueKind.Object || pp.EnumerateObject().Any(p => p.Value.ValueKind != JsonValueKind.String)))
+            FillInformationalDefaults(root, omitted);
+            var isResult = root["packetType"] is JsonValue pt && pt.TryGetValue<string>(out var type) && type == ProtocolConstants.PacketTypeResult;
+            omitted.AddRange(NullableFields.Where(f => !root.ContainsKey(f) && (isResult || f is not ("verification" or "resultEnvelope"))));
+            if (root["publicParameters"] is not JsonObject pp || pp.Any(p => p.Value is not JsonValue v || v.GetValueKind() != JsonValueKind.String))
             {
                 throw new ProtocolException(ErrorCodes.Manifest, "publicParameters debe ser un objeto plano de cadenas.");
             }
@@ -319,7 +343,48 @@ public sealed class PackageValidator(TimeProvider clock, IReplayGuard replay, IT
         {
             throw new ProtocolException(ErrorCodes.Manifest, "manifest.json no es JSON válido o tiene tipos incorrectos.", ex);
         }
+        catch (InvalidOperationException ex)
+        {
+            throw new ProtocolException(ErrorCodes.Manifest, "manifest.json tiene tipos incorrectos.", ex);
+        }
 
+        return (Validate(manifest), omitted);
+    }
+
+    /// <summary>ADR 0016: completa los campos informativos omitidos con valores deducibles.</summary>
+    private static void FillInformationalDefaults(JsonObject m, List<string> omitted)
+    {
+        void Default(string name, Func<JsonNode?> value)
+        {
+            if (!m.ContainsKey(name) || m[name] is null)
+            {
+                m[name] = value();
+                omitted.Add(name);
+            }
+        }
+
+        string Text(string name) => m[name] is JsonValue v && v.TryGetValue<string>(out var t) ? t : string.Empty;
+
+        var info = AlgorithmCatalog.ByCode(Text("algorithmCode"));
+        Default("sourceTeam", () => Identifiers.IsNodeId(Text("sourceNode"))
+            ? int.Parse(Text("sourceNode").AsSpan(2), System.Globalization.CultureInfo.InvariantCulture)
+            : 0);
+        Default("sourceIp", () => "desconocida");
+        Default("algorithmId", () => info?.Id ?? 0);
+        Default("algorithmName", () => Text("algorithmCode"));
+        Default("operationName", () => info?.OperationName(Text("operation")) ?? Text("operation"));
+        Default("payloadMode", () => ProtocolConstants.PayloadFile);
+        Default("originalFileName", () => "datos.bin");
+        Default("originalExtension", () => Path.GetExtension(Text("originalFileName")));
+        Default("originalSizeBytes", () => 0);
+        Default("contentType", () => ContentTypes.ForFile(Text("originalFileName"), Text("payloadMode")));
+        Default("encryptedSizeBytes", () => UnknownSize);
+        Default("publicParameters", () => new JsonObject());
+        Default("signatureAlgorithm", () => ProtocolConstants.SignatureAlgorithm);
+    }
+
+    private static Manifest Validate(Manifest? manifest)
+    {
         if (manifest is null)
         {
             throw new ProtocolException(ErrorCodes.Manifest, "manifest.json está vacío.");
@@ -354,7 +419,7 @@ public sealed class PackageValidator(TimeProvider clock, IReplayGuard replay, IT
         Require(manifest.OriginalSizeBytes >= 0, "originalSizeBytes");
         Require(manifest.ContentType is not null, "contentType");
         Require(Identifiers.IsContentHash(manifest.EncryptedSha256), "encryptedSha256");
-        Require(manifest.EncryptedSizeBytes >= 0, "encryptedSizeBytes");
+        Require(manifest.EncryptedSizeBytes >= UnknownSize, "encryptedSizeBytes");
         Require(manifest.PayloadMode != ProtocolConstants.PayloadMultipart
             || (manifest.Parts is { Count: > 0 and <= ProtocolConstants.MultipartMaxEntries }
                 && manifest.Parts.All(p => p is not null && ZipSafety.IsFlatName(p.Name) && Identifiers.IsContentHash(p.Sha256) && p.SizeBytes >= 0)), "parts");

@@ -483,4 +483,44 @@ public sealed class PackageTests
         (await new PackageValidator(clock, new MemoryReplayGuard(), trust).ValidateAsync(fwd.Zip, PackageValidationOptions.Inbox, default))
             .Manifest.CertificateThumbprintSha256.ShouldBe(eq08.Thumbprint);
     }
+
+    [Fact] // ADR 0016: campos informativos omitidos (no firmados) se completan y se reportan
+    public async Task Missing_informational_fields_are_defaulted_and_reported()
+    {
+        var p = HashPackage();
+        var zip = ZipTools.EditManifest(p.Zip, m =>
+        {
+            foreach (var f in PackageValidator.InformationalFields.Where(f => f != "publicParameters"))
+            {
+                m.Remove(f);
+            }
+
+            m.Remove("requestId");
+        });
+        var ok = await Validator.ValidateAsync(zip, PackageValidationOptions.Inbox, default);
+        ok.Manifest.SourceTeam.ShouldBe(8);
+        ok.Manifest.AlgorithmId.ShouldBe(15);
+        ok.Manifest.OperationName.ShouldBe("calcular hash");
+        ok.Manifest.EncryptedSizeBytes.ShouldBe(ok.Data.LongLength);
+        ok.OmittedFields!.ShouldContain("sourceIp");
+        ok.OmittedFields!.ShouldContain("encryptedSizeBytes");
+        ok.OmittedFields!.ShouldContain("requestId");
+    }
+
+    [Fact] // ADR 0016: sin publicParameters se usa {} y el hash firmado debe seguir coincidiendo
+    public async Task Missing_public_parameters_still_checked_against_signed_hash()
+    {
+        var zip = ZipTools.EditManifest(HashPackage().Zip, m => m.Remove("publicParameters"));
+        (await ErrorOf(zip)).ShouldBe(ErrorCodes.ParamsHash);
+    }
+
+    [Theory] // ADR 0016: los campos de la cadena de firma siguen siendo obligatorios
+    [InlineData("producerNode")]
+    [InlineData("encryptedSha256")]
+    [InlineData("manifestSignatureBase64")]
+    public async Task Signed_fields_remain_required(string field)
+    {
+        var zip = ZipTools.EditManifest(HashPackage().Zip, m => m.Remove(field));
+        (await ErrorOf(zip)).ShouldBe(ErrorCodes.Manifest);
+    }
 }
