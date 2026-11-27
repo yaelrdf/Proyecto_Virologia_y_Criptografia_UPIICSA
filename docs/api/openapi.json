@@ -436,6 +436,12 @@
               "string"
             ],
             "format": "int64"
+          },
+          "notes": {
+            "type": [
+              "null",
+              "string"
+            ]
           }
         }
       },
@@ -762,6 +768,21 @@
           },
           "serverTimeUtc": {
             "type": "string"
+          },
+          "supportedProtocolVersions": {
+            "type": [
+              "null",
+              "array"
+            ],
+            "items": {
+              "type": "string"
+            }
+          },
+          "nodeVersion": {
+            "type": [
+              "null",
+              "string"
+            ]
           }
         }
       }

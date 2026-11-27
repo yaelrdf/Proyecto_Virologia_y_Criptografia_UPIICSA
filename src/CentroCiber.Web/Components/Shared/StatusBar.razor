@@ -9,6 +9,7 @@
     <span>HTTP <b>@Node.HttpPort</b> · HTTPS <b>@(Node.HttpsPort?.ToString(System.Globalization.CultureInfo.InvariantCulture) ?? "desactivado")</b></span>
     <span><span class="cc-dot @(Beacon.Listening ? "" : "off")"></span>Oyente UDP @(Beacon.Listening ? "activo" : "inactivo")</span>
     <span>Huella <span class="mono">@Node.Identity.Thumbprint[..16]…</span></span>
+    <span>v@(CentroCiber.Web.Api.NodeVersionInfo.Current)</span>
     @if (Pending > 0)
     {
         <span><b>@Pending</b> evento(s) nuevos</span>

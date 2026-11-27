@@ -34,6 +34,27 @@ public sealed class ProviderApiTests : IDisposable
         status.Algorithms.Select(a => a.AlgorithmCode).ShouldBe(["HASHSHA", "HMACSHA256"]);
         status.CertificateThumbprintSha256.ShouldBe(factory.Node().Identity.Thumbprint);
         Identifiers.IsTimestamp(status.ServerTimeUtc).ShouldBeTrue();
+        status.SupportedProtocolVersions.ShouldBe(["2.0"]); // extensión compatible con EQ06
+        status.NodeVersion.ShouldBe("1.1.0");
+    }
+
+    [Fact] // Compatibilidad: el status de EQ06 trae campos extra (role, endpoint, certificateThumbprint) y perfiles con "notes"
+    public void Foreign_status_and_profile_extensions_are_ignored()
+    {
+        var status = JsonSerializer.Deserialize<StatusResponse>("""
+            {"nodeId":"EQ06","teamNumber":6,"protocolVersion":"2.0","status":"online","acceptingPackages":true,"httpPort":5006,"httpsPort":null,
+             "algorithms":[{"algorithmId":11,"algorithmCode":"LSBSTEGO"}],"certificateThumbprintSha256":"AA","serverTimeUtc":"2026-11-27T10:00:00Z",
+             "certificateThumbprint":"AA","supportedProtocolVersions":["1.0","2.0"],"role":"Initial","endpoint":"http://10.0.0.6:5006"}
+            """)!;
+        status.SupportedProtocolVersions.ShouldBe(["1.0", "2.0"]);
+        var profile = JsonSerializer.Deserialize<AlgorithmsResponse>("""
+            {"nodeId":"EQ06","algorithms":[{"algorithmId":11,"algorithmCode":"LSBSTEGO","variants":["LSB-1BIT-PNG"],
+             "operations":{"forward":{"name":"ocultar","inputs":["payload","cover"]},"inverse":{"name":"extraer","inputs":["package"]}},
+             "secretParameters":[{"name":"password","type":"text","optional":true,"requiredFor":[]}],"options":[],
+             "publicParameters":["imageFormat"],"payloadModes":["text"],"maxPayloadBytes":52428800,"notes":"Portadora PNG."}]}
+            """)!;
+        profile.Algorithms[0].Notes.ShouldBe("Portadora PNG.");
+        profile.Algorithms[0].Operations["forward"].Inputs.ShouldContain("cover");
     }
 
     [Fact] // Estándar §10.1: encabezados X-CC-* en las respuestas de la API

@@ -12,6 +12,6 @@
     <Authors>Equipo 8 · Centro de Ciberseguridad Comunitario</Authors>
     <Product>Atalaya EQ08</Product>
     <PackageLicenseExpression>GPL-3.0-only</PackageLicenseExpression>
-    <Version>1.0.0</Version>
+    <Version>1.1.0</Version>
   </PropertyGroup>
 </Project>

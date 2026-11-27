@@ -33,6 +33,8 @@ public sealed class NodeController(NodeContext node, LocalAlgorithmProvider loca
                 .Select(a => new StatusAlgorithm(a.Id, a.Code)).ToList(),
             CertificateThumbprintSha256 = node.Identity.Thumbprint,
             ServerTimeUtc = Identifiers.FormatTimestamp(node.Clock.GetUtcNow()),
+            SupportedProtocolVersions = [ProtocolConstants.ProtocolVersion],
+            NodeVersion = NodeVersionInfo.Current,
         };
     }
 
@@ -58,4 +60,13 @@ public sealed class NodeController(NodeContext node, LocalAlgorithmProvider loca
     [ProducesResponseType<ProblemDocument>(StatusCodes.Status404NotFound, ProtocolConstants.ProblemContentType)]
     public IActionResult Key(string keyId) =>
         throw new ProtocolException(ErrorCodes.KeyNotFound, $"{node.NodeId} no guarda llaves; keyId desconocido: {keyId}.");
+}
+
+/// <summary>Versión del producto (de <c>Directory.Build.props</c>).</summary>
+public static class NodeVersionInfo
+{
+    public static string Current { get; } =
+        typeof(NodeVersionInfo).Assembly.GetCustomAttributes(typeof(System.Reflection.AssemblyInformationalVersionAttribute), false)
+            .OfType<System.Reflection.AssemblyInformationalVersionAttribute>().FirstOrDefault()?.InformationalVersion.Split('+')[0]
+        ?? typeof(NodeVersionInfo).Assembly.GetName().Version?.ToString(3) ?? "0.0.0";
 }

@@ -40,6 +40,16 @@ public sealed record StatusResponse
 
     [JsonPropertyName("serverTimeUtc")]
     public required string ServerTimeUtc { get; init; }
+
+    /// <summary>Extensión compatible (campos desconocidos se ignoran, §9.5): versiones de protocolo que habla el nodo.</summary>
+    [JsonPropertyName("supportedProtocolVersions")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public IReadOnlyList<string>? SupportedProtocolVersions { get; init; }
+
+    /// <summary>Extensión: versión del software del nodo.</summary>
+    [JsonPropertyName("nodeVersion")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public string? NodeVersion { get; init; }
 }
 
 /// <summary>Operación descrita en el perfil (§10.4).</summary>
@@ -111,6 +121,11 @@ public sealed record AlgorithmProfile
 
     [JsonPropertyName("maxPayloadBytes")]
     public required long MaxPayloadBytes { get; init; }
+
+    /// <summary>Extensión usada por otros nodos (p. ej. EQ06): notas para el usuario sobre el algoritmo.</summary>
+    [JsonPropertyName("notes")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public string? Notes { get; init; }
 }
 
 /// <summary><c>GET /api/algorithms</c> (§10.4).</summary>
