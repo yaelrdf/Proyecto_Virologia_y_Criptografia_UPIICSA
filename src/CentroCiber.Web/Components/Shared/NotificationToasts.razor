@@ -1,0 +1,36 @@
+@implements IDisposable
+@inject NotificationHub Hub
+
+<div class="toasts" aria-live="polite">
+    @foreach (var e in visible)
+    {
+        <div class="toast @(e.Kind == NodeEventKind.ThumbprintChanged ? "alerta-huella" : "")">
+            @e.Message
+        </div>
+    }
+</div>
+
+@code {
+    private readonly List<NodeEvent> visible = [];
+
+    protected override void OnInitialized() => Hub.Published += OnEvent;
+
+    private void OnEvent(NodeEvent e)
+    {
+        _ = InvokeAsync(async () =>
+        {
+            visible.Insert(0, e);
+            if (visible.Count > 4)
+            {
+                visible.RemoveAt(visible.Count - 1);
+            }
+
+            StateHasChanged();
+            await Task.Delay(TimeSpan.FromSeconds(e.Kind == NodeEventKind.ThumbprintChanged ? 20 : 8));
+            visible.Remove(e);
+            StateHasChanged();
+        });
+    }
+
+    public void Dispose() => Hub.Published -= OnEvent;
+}

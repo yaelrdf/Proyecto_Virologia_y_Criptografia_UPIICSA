@@ -1,0 +1,150 @@
+@page "/operar/vuelta"
+@inject OperationsService Ops
+@inject ProfileCatalog Profiles
+@inject PackageLibrary Library
+@inject PackageValidator Validator
+
+<PageTitle>Operar (vuelta) · Atalaya</PageTitle>
+<h1>Operar (vuelta)</h1>
+<p class="subtitulo">Sube un .zip o tómalo de Consultas, revisa la validación paso a paso y ejecuta <code>inverse</code> local o en el nodo dueño.</p>
+
+<div class="grid">
+    <div class="card">
+        <label>Paquete</label>
+        <InputFile OnChange="OnUpload" accept=".zip" />
+        @if (fromLibrary is not null)
+        {
+            <p class="hint">Tomado de Consultas: <span class="mono">@fromLibrary.FileName</span></p>
+        }
+        @if (report is not null)
+        {
+            <h2>Validación (§13.1)</h2>
+            <ul class="pasos">
+                @foreach (var s in report.Steps)
+                {
+                    <li class="@(s.Passed ? "ok" : "fallo")">#@s.Number @s.Description @(s.Code is null ? "" : $"— {s.Code}: {s.Detail}")</li>
+                }
+            </ul>
+        }
+    </div>
+    <div class="card">
+        @if (manifest is not null)
+        {
+            <p><b>@manifest.AlgorithmCode</b> (@manifest.AlgorithmName) · @manifest.OperationName · de <b>@manifest.SourceNode</b>, productor <b>@manifest.ProducerNode</b></p>
+            <p class="hint">Original: @manifest.OriginalFileName (@manifest.OriginalSizeBytes bytes)</p>
+            @if (current is not null)
+            {
+                <div class="alerta @(current.Available ? "ok" : "warn")">@current.Reason</div>
+            }
+            <AlgorithmForm Profile="profile" Operation="inverse" SecretValues="secrets" />
+            <div class="row" style="margin-top:16px">
+                <button class="btn" disabled="@(busy || report?.IsValid != true || current?.Available != true)" @onclick="RunAsync">
+                    @(busy ? "Procesando…" : Capital(AlgorithmCatalog.ByCode(manifest.AlgorithmCode)?.InverseName ?? "Ejecutar"))
+                </button>
+            </div>
+        }
+        else
+        {
+            <p class="hint">Selecciona un paquete para continuar.</p>
+        }
+    </div>
+</div>
+
+@if (error is not null)
+{
+    <div class="alerta error" role="alert">@error</div>
+}
+@if (outcome is not null)
+{
+    <div class="card">
+        @if (outcome.Result.Manifest?.Verification is { } v)
+        {
+            <div class="alerta @(v.Valid ? "ok" : "error")" role="status"><b>@(v.Valid ? "Válido" : "NO válido")</b>: @v.Detail</div>
+        }
+        <div class="alerta ok">@outcome.Summary</div>
+        @if (outcome.Stored is { } s)
+        {
+            <div class="row">
+                <a class="btn" href="descargas/original/@s.Id" target="_blank">Descargar original</a>
+                <a class="btn secundario" href="descargas/paquete/@s.Id" target="_blank">Descargar resultado (zip)</a>
+            </div>
+        }
+    </div>
+}
+
+@code {
+    [SupplyParameterFromQuery(Name = "id")] public int? PackageId { get; set; }
+
+    private byte[]? zip;
+    private PackageEntity? fromLibrary;
+    private ValidationReport? report;
+    private Manifest? manifest;
+    private AlgorithmProfile? profile;
+    private ProviderAvailability? current;
+    private Dictionary<string, string> secrets = [];
+    private bool busy;
+    private string? error;
+    private OperationOutcome? outcome;
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if (PackageId is { } id && await Library.GetAsync(id) is { StoragePath: not null } entity)
+        {
+            fromLibrary = entity;
+            await LoadAsync(await Library.ReadZipAsync(entity));
+        }
+    }
+
+    private async Task OnUpload(InputFileChangeEventArgs e)
+    {
+        fromLibrary = null;
+        using var ms = new MemoryStream();
+        await using var s = e.File.OpenReadStream(ProtocolConstants.MaxBodyBytes + 1);
+        await s.CopyToAsync(ms);
+        await LoadAsync(ms.ToArray());
+    }
+
+    private async Task LoadAsync(byte[] bytes)
+    {
+        zip = bytes;
+        outcome = null;
+        error = null;
+        secrets = [];
+        report = await Validator.ValidateWithReportAsync(bytes, PackageValidationOptions.ForInverse, default);
+        manifest = report.Package?.Manifest;
+        if (manifest is not null)
+        {
+            (profile, _) = await Profiles.GetAsync(manifest.AlgorithmCode);
+            current = await Ops.AvailabilityAsync(AlgorithmCatalog.ByCode(manifest.AlgorithmCode)!);
+        }
+    }
+
+    private async Task RunAsync()
+    {
+        busy = true;
+        error = null;
+        try
+        {
+            outcome = await Ops.InverseAsync(new InverseRequest
+            {
+                AlgorithmCode = manifest!.AlgorithmCode,
+                PackageZip = zip!,
+                Secrets = secrets.Where(kv => !string.IsNullOrEmpty(kv.Value)).ToDictionary(),
+            });
+        }
+        catch (ProtocolException ex)
+        {
+            error = $"{ex.Code}: {ex.Message}";
+        }
+        catch (Exception ex) when (ex is ProviderUnavailableException or InvalidOperationException)
+        {
+            error = ex.Message;
+        }
+        finally
+        {
+            busy = false;
+        }
+    }
+
+    private static string Capital(string s) => s.Length == 0 ? s : char.ToUpperInvariant(s[0]) + s[1..];
+}

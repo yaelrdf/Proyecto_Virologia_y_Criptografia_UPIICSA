@@ -1,0 +1,30 @@
+@inherits LayoutComponentBase
+@inject NodeContext Node
+
+<header class="cc-header">
+    <a class="cc-brand" href="/">
+        <img src="img/logo.svg" alt="" />
+        <span>Atalaya @Node.NodeId<small>Centro de Ciberseguridad Comunitario</small></span>
+    </a>
+    <nav class="cc-nav" aria-label="Principal">
+        <NavLink href="/" Match="NavLinkMatch.All">Operar (ida)</NavLink>
+        <NavLink href="/operar/vuelta">Operar (vuelta)</NavLink>
+        <NavLink href="/solicitudes">Solicitudes</NavLink>
+        <NavLink href="/consultas">Consultas</NavLink>
+        <NavLink href="/nodos">Nodos</NavLink>
+        <NavLink href="/ajustes">Ajustes</NavLink>
+    </nav>
+</header>
+
+<main class="cc-main">
+    @Body
+</main>
+
+<NotificationToasts />
+<StatusBar />
+
+<div id="blazor-error-ui" data-nosnippet>
+    Ocurrió un error inesperado en la interfaz.
+    <a href="." class="reload">Recargar</a>
+    <span class="dismiss">✕</span>
+</div>

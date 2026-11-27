@@ -1,0 +1,165 @@
+@page "/consultas"
+@implements IDisposable
+@inject PackageLibrary Library
+@inject OperationsService Ops
+@inject NodeDirectory Directory
+@inject NotificationHub Hub
+
+<PageTitle>Consultas · Atalaya</PageTitle>
+<h1>Consultas</h1>
+<p class="subtitulo">Historial de paquetes: generados por este nodo o por un dueño remoto, recibidos de la bandeja y resultados de <code>inverse</code>.</p>
+
+<div class="row" role="group" aria-label="Filtro por origen">
+    @foreach (var o in new[] { "", PackageOrigins.Generated, PackageOrigins.Received, PackageOrigins.Result })
+    {
+        <button class="btn @(origin == o ? "" : "secundario") chico" @onclick="() => FilterAsync(o)">@(o == "" ? "Todos" : o)</button>
+    }
+</div>
+
+@if (message is not null)
+{
+    <div class="alerta @(messageOk ? "ok" : "error")" style="margin-top:12px">@message</div>
+}
+
+@if (pending.Count > 0)
+{
+    <h2>Trabajos remotos pendientes</h2>
+    <div class="tabla"><table>
+        <thead><tr><th>Nodo</th><th>Algoritmo</th><th>Operación</th><th>jobId</th><th>Estado</th><th></th></tr></thead>
+        <tbody>
+        @foreach (var op in pending)
+        {
+            <tr>
+                <td>@op.PeerNode</td><td>@op.AlgorithmCode</td><td>@op.Operation</td><td class="mono">@op.JobId</td><td>@op.State</td>
+                <td><button class="btn chico" @onclick="() => CheckAsync(op)">Consultar</button></td>
+            </tr>
+        }
+        </tbody>
+    </table></div>
+}
+
+<h2>Paquetes</h2>
+<div class="tabla">
+    <table>
+        <thead><tr><th>Fecha (UTC)</th><th>Origen</th><th>Zip</th><th>Algoritmo</th><th>Remitente / productor</th><th>Verificación</th><th>Acciones</th></tr></thead>
+        <tbody>
+            @if (items.Count == 0)
+            {
+                <tr><td colspan="7">Sin paquetes.</td></tr>
+            }
+            @foreach (var p in items)
+            {
+                <tr>
+                    <td>@p.CreatedUtc.ToString("yyyy-MM-dd HH:mm:ss", System.Globalization.CultureInfo.InvariantCulture)</td>
+                    <td><span class="badge info">@p.Origin</span>@if (p.IsSample) { <span class="badge warn">ejemplo</span> }</td>
+                    <td class="mono">@p.FileName</td>
+                    <td>@p.AlgorithmCode · @p.Operation</td>
+                    <td>@p.SourceNode / @p.ProducerNode @if (p.KeyId is not null) { <div class="hint">keyRef @p.KeyId (@p.KeyOwnerNode)</div> }</td>
+                    <td>@if (p.VerificationValid is { } v) { <span class="badge @(v ? "ok" : "error")">@(v ? "válido" : "no válido")</span> }</td>
+                    <td>
+                        <div class="row">
+                            <button class="btn secundario chico" @onclick="() => selected = selected == p ? null : p">Manifiesto</button>
+                            @if (!p.IsSample)
+                            {
+                                <a class="btn secundario chico" href="descargas/paquete/@p.Id" target="_blank">Descargar</a>
+                                @if (p.PacketType == "package")
+                                {
+                                    <a class="btn chico" href="/operar/vuelta?id=@p.Id">Inverse</a>
+                                    <select aria-label="Reenviar a" @onchange="e => target = e.Value?.ToString()">
+                                        <option value="">Reenviar a…</option>
+                                        @foreach (var n in usableNodes)
+                                        {
+                                            <option value="@n.NodeId">@n.NodeId</option>
+                                        }
+                                    </select>
+                                    <button class="btn secundario chico" disabled="@string.IsNullOrEmpty(target)" @onclick="() => ForwardAsync(p)">Enviar</button>
+                                }
+                                @if (p.PacketType == "result")
+                                {
+                                    <a class="btn chico" href="descargas/original/@p.Id" target="_blank">Original</a>
+                                }
+                            }
+                        </div>
+                    </td>
+                </tr>
+                @if (selected == p)
+                {
+                    <tr><td colspan="7"><pre>@p.ManifestJson</pre></td></tr>
+                }
+            }
+        </tbody>
+    </table>
+</div>
+
+@code {
+    private IReadOnlyList<PackageEntity> items = [];
+    private List<RemoteOperationEntity> pending = [];
+    private List<NodeEntity> usableNodes = [];
+    private PackageEntity? selected;
+    private string origin = string.Empty;
+    private string? target;
+    private string? message;
+    private bool messageOk;
+
+    protected override async Task OnInitializedAsync()
+    {
+        Hub.Published += OnEvent;
+        await LoadAsync();
+    }
+
+    private async Task LoadAsync()
+    {
+        items = await Library.ListAsync(string.IsNullOrEmpty(origin) ? null : origin);
+        pending = (await Directory.RecentOperationsAsync(50))
+            .Where(o => o.Direction == OperationDirections.Outgoing && o.JobId is not null && o.State == ProtocolConstants.JobQueued).ToList();
+        usableNodes = (await Directory.ListAsync()).Where(n => !n.IsSelf && n.TrustState == TrustStates.Pinned && n.Status == "online").ToList();
+    }
+
+    private async Task FilterAsync(string o)
+    {
+        origin = o;
+        await LoadAsync();
+    }
+
+    private void OnEvent(NodeEvent e)
+    {
+        if (e.Kind is NodeEventKind.PackageStored or NodeEventKind.JobCompleted)
+        {
+            _ = InvokeAsync(async () =>
+            {
+                await LoadAsync();
+                StateHasChanged();
+            });
+        }
+    }
+
+    private async Task ForwardAsync(PackageEntity p)
+    {
+        try
+        {
+            var receipt = await Ops.SendToInboxAsync(target!, await Library.ReadZipAsync(p));
+            (message, messageOk) = ($"Reenviado a {target} (re-firmado, packetId {receipt.PacketId}): {receipt.Status}.", true);
+        }
+        catch (Exception ex) when (ex is ProtocolException or ProviderUnavailableException or InvalidOperationException)
+        {
+            (message, messageOk) = (ex is ProtocolException pe ? $"{pe.Code}: {pe.Message}" : ex.Message, false);
+        }
+    }
+
+    private async Task CheckAsync(RemoteOperationEntity op)
+    {
+        try
+        {
+            var r = await Ops.CompletePendingAsync(op.PeerNode, op.JobId!, op.RequestId, op.Operation);
+            (message, messageOk) = r is null ? ("El trabajo sigue en proceso.", true) : (r.Summary, true);
+        }
+        catch (Exception ex) when (ex is ProtocolException or ProviderUnavailableException)
+        {
+            (message, messageOk) = (ex.Message, false);
+        }
+
+        await LoadAsync();
+    }
+
+    public void Dispose() => Hub.Published -= OnEvent;
+}

@@ -1,0 +1,103 @@
+/* Atalaya EQ08 — identidad visual (docs/manuales/Manual_Identidad.md). Contraste AA verificado. */
+:root {
+  --cc-azul: #0B3D5C;        /* Azul Atalaya: marca, encabezados */
+  --cc-verde: #0F7B6C;       /* Verde Señal: acciones primarias */
+  --cc-turquesa: #5FD3C1;    /* Turquesa Faro: acentos sobre azul */
+  --cc-rojo: #B3261E;        /* Rojo Alerta: errores, huella cambiada */
+  --cc-ambar: #7A4D00;       /* Ámbar: advertencias (texto) */
+  --cc-ambar-fondo: #FFF4DB;
+  --cc-ok: #0B6B3A;
+  --cc-ok-fondo: #E6F4EC;
+  --cc-rojo-fondo: #FDECEA;
+  --cc-texto: #1B2430;
+  --cc-texto-suave: #4A5868;
+  --cc-fondo: #F4F7FA;
+  --cc-superficie: #FFFFFF;
+  --cc-borde: #D5DEE7;
+  --cc-radio: 10px;
+  --cc-fuente: "Inter", "Segoe UI", system-ui, -apple-system, Roboto, "Helvetica Neue", Arial, sans-serif;
+  --cc-mono: "IBM Plex Mono", ui-monospace, "Cascadia Mono", Consolas, "Liberation Mono", monospace;
+}
+
+* { box-sizing: border-box; }
+html, body { margin: 0; padding: 0; }
+body {
+  font-family: var(--cc-fuente);
+  color: var(--cc-texto);
+  background: var(--cc-fondo);
+  font-size: 15px;
+  line-height: 1.5;
+  padding-bottom: 48px;
+}
+a { color: var(--cc-verde); }
+code, pre, .mono { font-family: var(--cc-mono); font-size: 13px; }
+pre { background: #0F1E2B; color: #E8EEF4; padding: 12px; border-radius: var(--cc-radio); overflow: auto; max-height: 420px; }
+h1 { font-size: 24px; margin: 0 0 4px; color: var(--cc-azul); }
+h2 { font-size: 18px; margin: 24px 0 8px; color: var(--cc-azul); }
+.subtitulo { color: var(--cc-texto-suave); margin: 0 0 20px; }
+
+/* Encabezado */
+.cc-header { background: var(--cc-azul); color: #FFFFFF; display: flex; align-items: center; gap: 24px; padding: 10px 24px; flex-wrap: wrap; }
+.cc-brand { display: flex; align-items: center; gap: 10px; color: #FFFFFF; text-decoration: none; font-weight: 700; font-size: 18px; }
+.cc-brand img { width: 36px; height: 36px; }
+.cc-brand small { display: block; font-weight: 400; font-size: 12px; color: #E8EEF4; }
+.cc-nav { display: flex; gap: 4px; flex-wrap: wrap; }
+.cc-nav a { color: #E8EEF4; text-decoration: none; padding: 6px 12px; border-radius: 6px; }
+.cc-nav a:hover { background: rgba(255,255,255,.08); }
+.cc-nav a.active { background: var(--cc-turquesa); color: var(--cc-azul); font-weight: 600; }
+.cc-main { max-width: 1180px; margin: 0 auto; padding: 24px; }
+
+/* Barra de estado */
+.cc-statusbar { position: fixed; left: 0; right: 0; bottom: 0; background: var(--cc-azul); color: #E8EEF4; display: flex; gap: 20px; padding: 8px 24px; font-size: 13px; flex-wrap: wrap; z-index: 10; }
+.cc-statusbar b { color: #FFFFFF; }
+.cc-dot { display: inline-block; width: 9px; height: 9px; border-radius: 50%; margin-right: 6px; background: var(--cc-turquesa); }
+.cc-dot.off { background: #FF8A80; }
+
+/* Tarjetas y formularios */
+.card { background: var(--cc-superficie); border: 1px solid var(--cc-borde); border-radius: var(--cc-radio); padding: 18px; margin-bottom: 16px; }
+.grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 16px; }
+label { display: block; font-weight: 600; margin: 10px 0 4px; }
+.hint { font-weight: 400; color: var(--cc-texto-suave); font-size: 13px; }
+input[type=text], input[type=number], input[type=password], select, textarea {
+  width: 100%; padding: 8px 10px; border: 1px solid var(--cc-borde); border-radius: 6px; font: inherit; background: #FFFFFF; color: var(--cc-texto);
+}
+textarea { min-height: 110px; font-family: var(--cc-mono); }
+input:focus, select:focus, textarea:focus, button:focus-visible, a:focus-visible { outline: 3px solid var(--cc-turquesa); outline-offset: 1px; }
+.row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+.btn { display: inline-block; border: 0; border-radius: 6px; padding: 8px 14px; font: inherit; font-weight: 600; cursor: pointer; text-decoration: none; background: var(--cc-verde); color: #FFFFFF; }
+.btn:disabled { opacity: .55; cursor: not-allowed; }
+.btn.secundario { background: #FFFFFF; color: var(--cc-azul); border: 1px solid var(--cc-azul); }
+.btn.peligro { background: var(--cc-rojo); }
+.btn.chico { padding: 4px 10px; font-size: 13px; }
+
+/* Tablas */
+table { width: 100%; border-collapse: collapse; background: var(--cc-superficie); }
+th, td { text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--cc-borde); vertical-align: top; }
+th { background: #E8EEF4; color: var(--cc-azul); font-size: 13px; }
+.tabla { overflow-x: auto; border: 1px solid var(--cc-borde); border-radius: var(--cc-radio); }
+
+/* Insignias y avisos */
+.badge { display: inline-block; padding: 2px 8px; border-radius: 999px; font-size: 12px; font-weight: 600; white-space: nowrap; }
+.badge.ok { background: var(--cc-ok-fondo); color: var(--cc-ok); }
+.badge.warn { background: var(--cc-ambar-fondo); color: var(--cc-ambar); }
+.badge.error { background: var(--cc-rojo-fondo); color: var(--cc-rojo); }
+.badge.info { background: #E8EEF4; color: var(--cc-azul); }
+.alerta { border-radius: var(--cc-radio); padding: 12px 14px; margin: 12px 0; border-left: 5px solid; }
+.alerta.ok { background: var(--cc-ok-fondo); color: var(--cc-ok); border-color: var(--cc-ok); }
+.alerta.warn { background: var(--cc-ambar-fondo); color: var(--cc-ambar); border-color: var(--cc-ambar); }
+.alerta.error { background: var(--cc-rojo-fondo); color: var(--cc-rojo); border-color: var(--cc-rojo); }
+.pasos { list-style: none; padding: 0; margin: 0; }
+.pasos li { padding: 4px 0; }
+.pasos .ok::before { content: "✔ "; color: var(--cc-ok); font-weight: 700; }
+.pasos .fallo::before { content: "✘ "; color: var(--cc-rojo); font-weight: 700; }
+.huella { font-family: var(--cc-mono); font-size: 12px; word-break: break-all; }
+
+/* Notificaciones */
+.toasts { position: fixed; right: 16px; bottom: 56px; display: flex; flex-direction: column; gap: 8px; z-index: 20; max-width: 380px; }
+.toast { overflow-wrap: anywhere; background: var(--cc-azul); color: #FFFFFF; border-left: 5px solid var(--cc-turquesa); padding: 10px 14px; border-radius: 8px; box-shadow: 0 4px 16px rgba(11,61,92,.25); }
+.toast.alerta-huella { border-left-color: #FF8A80; }
+
+#blazor-error-ui { display: none; position: fixed; bottom: 48px; left: 0; right: 0; background: var(--cc-rojo); color: #FFFFFF; padding: 10px 24px; z-index: 30; }
+#blazor-error-ui .reload { color: #FFFFFF; font-weight: 700; }
+#blazor-error-ui .dismiss { float: right; cursor: pointer; }
+h1:focus { outline: none; }

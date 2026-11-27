@@ -1,0 +1,76 @@
+root = true
+
+[*]
+charset = utf-8
+end_of_line = lf
+insert_final_newline = true
+trim_trailing_whitespace = true
+indent_style = space
+indent_size = 4
+
+[*.{json,yml,yaml,csproj,props,slnx,xml,razor.css,css,js,svg}]
+indent_size = 2
+
+[*.md]
+trim_trailing_whitespace = false
+
+[*.ps1]
+end_of_line = crlf
+
+[*.cs]
+csharp_style_namespace_declarations = file_scoped:warning
+csharp_using_directive_placement = outside_namespace
+dotnet_sort_system_directives_first = true
+csharp_style_var_for_built_in_types = true:suggestion
+csharp_style_var_when_type_is_apparent = true:suggestion
+csharp_prefer_braces = when_multiline:suggestion
+dotnet_style_readonly_field = true:suggestion
+csharp_style_expression_bodied_methods = when_on_single_line:silent
+
+# Analizadores: se mantienen activos; se silencian reglas de estilo que no aportan en un proyecto académico.
+dotnet_diagnostic.CA1707.severity = none   # guiones bajos en nombres de pruebas
+dotnet_diagnostic.CA1515.severity = none   # tipos públicos en ensamblados de aplicación
+dotnet_diagnostic.CA1303.severity = none   # literales localizables
+dotnet_diagnostic.CA1848.severity = none   # LoggerMessage delegates
+dotnet_diagnostic.CA1873.severity = none
+dotnet_diagnostic.CA2007.severity = none   # ConfigureAwait (ASP.NET Core sin SynchronizationContext)
+dotnet_diagnostic.CA1062.severity = none   # validación de nulos (Nullable activo)
+dotnet_diagnostic.CA1305.severity = suggestion
+dotnet_diagnostic.CA1307.severity = suggestion
+dotnet_diagnostic.CA1308.severity = none   # ToLowerInvariant es requerido por el estándar (hex minúsculas)
+dotnet_diagnostic.CA1819.severity = none   # propiedades que devuelven arreglos (DTOs)
+dotnet_diagnostic.CA2227.severity = none
+dotnet_diagnostic.CA1002.severity = none
+dotnet_diagnostic.CA1031.severity = suggestion
+dotnet_diagnostic.CA1716.severity = none
+dotnet_diagnostic.CA1724.severity = none
+dotnet_diagnostic.CA1812.severity = none
+dotnet_diagnostic.CA1861.severity = suggestion
+dotnet_diagnostic.CA1056.severity = none
+dotnet_diagnostic.CA1054.severity = none
+dotnet_diagnostic.CA1055.severity = none
+dotnet_diagnostic.CA2234.severity = none
+dotnet_diagnostic.CA1032.severity = none
+dotnet_diagnostic.CA1711.severity = none
+dotnet_diagnostic.CA1720.severity = none
+dotnet_diagnostic.CA1034.severity = none
+dotnet_diagnostic.CA5394.severity = none   # Random no criptográfico solo en pruebas
+dotnet_diagnostic.CA1024.severity = none
+dotnet_diagnostic.CA1508.severity = suggestion
+dotnet_diagnostic.CA1849.severity = suggestion
+dotnet_diagnostic.CA2000.severity = suggestion
+dotnet_diagnostic.CA1001.severity = suggestion
+dotnet_diagnostic.CA1823.severity = suggestion
+dotnet_diagnostic.CA1822.severity = suggestion
+dotnet_diagnostic.CA1806.severity = suggestion
+dotnet_diagnostic.IDE0005.severity = suggestion
+
+[tests/**.cs]
+dotnet_diagnostic.CA2201.severity = none
+dotnet_diagnostic.CA1063.severity = none
+dotnet_diagnostic.CA1816.severity = none
+
+[**/Migrations/*.cs]
+generated_code = true
+dotnet_analyzer_diagnostic.severity = none
+csharp_style_namespace_declarations = block_scoped:none

@@ -1,0 +1,69 @@
+@* Bandeja de Solicitudes (§15). *@
+<div class="tabla">
+    <table>
+        <thead>
+            <tr>
+                <th>Remitente</th>
+                <th>IP de origen</th>
+                <th>Zip</th>
+                <th>Algoritmo</th>
+                <th>Operación</th>
+                <th>Validación</th>
+                <th>Estado</th>
+                <th>Acciones</th>
+            </tr>
+        </thead>
+        <tbody>
+            @if (Items.Count == 0)
+            {
+                <tr><td colspan="8">No hay solicitudes.</td></tr>
+            }
+            @foreach (var r in Items)
+            {
+                <tr>
+                    <td><b>@r.SourceNode</b></td>
+                    <td class="mono">@r.SourceIp</td>
+                    <td class="mono">@r.FileName</td>
+                    <td>@r.AlgorithmCode</td>
+                    <td>@r.OperationName</td>
+                    <td>
+                        <span class="badge @BadgeFor(r.ValidationResult)">@r.ValidationResult</span>
+                        @if (r.ErrorCode is not null)
+                        {
+                            <span class="badge error">@r.ErrorCode</span>
+                        }
+                        @if (r.IsSample)
+                        {
+                            <span class="badge info">ejemplo</span>
+                        }
+                    </td>
+                    <td>@r.Status</td>
+                    <td>
+                        @if (r.Status == RequestStates.Pending && !r.IsSample)
+                        {
+                            <div class="row">
+                                <button class="btn chico" @onclick="() => OnAccept.InvokeAsync(r)">Aceptar</button>
+                                <button class="btn peligro chico" @onclick="() => OnReject.InvokeAsync(r)">Rechazar</button>
+                            </div>
+                        }
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+</div>
+
+@code {
+    [Parameter] public IReadOnlyList<InboxRequestEntity> Items { get; set; } = [];
+
+    [Parameter] public EventCallback<InboxRequestEntity> OnAccept { get; set; }
+
+    [Parameter] public EventCallback<InboxRequestEntity> OnReject { get; set; }
+
+    public static string BadgeFor(string label) => label switch
+    {
+        ValidationLabels.SignatureOk => "ok",
+        ValidationLabels.Unconfirmed => "warn",
+        _ => "error",
+    };
+}

@@ -1,0 +1,82 @@
+@* Formulario generado a partir del perfil GET /api/algorithms (§10.4). *@
+@using System.Security.Cryptography
+
+@if (Profile is not null)
+{
+    @foreach (var option in Options)
+    {
+        <label for="opt-@option.Name">@option.Name <span class="hint">(opción pública)</span></label>
+        @if (option.Values is { Count: > 0 })
+        {
+            <select id="opt-@option.Name" value="@Get(OptionValues, option.Name, option.Default)" @onchange="e => OptionValues[option.Name] = e.Value?.ToString() ?? string.Empty">
+                @foreach (var v in option.Values)
+                {
+                    <option value="@v">@v</option>
+                }
+            </select>
+        }
+        else
+        {
+            <input id="opt-@option.Name" type="text" value="@Get(OptionValues, option.Name, option.Default)" @onchange="e => OptionValues[option.Name] = e.Value?.ToString() ?? string.Empty" />
+        }
+    }
+
+    @foreach (var secret in Secrets)
+    {
+        <label for="sec-@secret.Name">
+            @secret.Name
+            <span class="hint">(secreto, viaja cifrado en CC-ENV-1@(secret.MinBytes is { } min ? $"; Base64 de ≥ {min} bytes" : string.Empty))</span>
+        </label>
+        <div class="row">
+            <input id="sec-@secret.Name" type="password" autocomplete="off" style="flex:1"
+                   value="@Get(SecretValues, secret.Name, null)" @onchange="e => SecretValues[secret.Name] = e.Value?.ToString() ?? string.Empty" />
+            @if (secret.Type == "base64")
+            {
+                <button type="button" class="btn secundario chico" @onclick="() => Generate(secret)">Generar clave</button>
+            }
+        </div>
+        @if (Generated.Contains(secret.Name))
+        {
+            <p class="hint">Clave generada (@(secret.MinBytes ?? 32) bytes). Cópiala y compártela fuera de banda; el nodo no la guarda:
+                <code class="huella">@SecretValues[secret.Name]</code></p>
+        }
+    }
+
+    @if (Options.Count == 0 && Secrets.Count == 0)
+    {
+        <p class="hint">Este algoritmo no requiere parámetros para «@Profile.Operations.GetValueOrDefault(Operation)?.Name».</p>
+    }
+}
+
+@code {
+    [Parameter, EditorRequired] public AlgorithmProfile? Profile { get; set; }
+
+    [Parameter] public string Operation { get; set; } = ProtocolConstants.OperationForward;
+
+    [Parameter] public Dictionary<string, string> OptionValues { get; set; } = [];
+
+    [Parameter] public Dictionary<string, string> SecretValues { get; set; } = [];
+
+    private readonly HashSet<string> Generated = [];
+
+    private IReadOnlyList<ProfileOption> Options => Operation == ProtocolConstants.OperationForward ? Profile?.Options ?? [] : [];
+
+    private IReadOnlyList<ProfileSecret> Secrets => (Profile?.SecretParameters ?? [])
+        .Where(s => s.RequiredFor.Count == 0 || s.RequiredFor.Contains(Operation)).ToList();
+
+    protected override void OnParametersSet()
+    {
+        foreach (var o in Options.Where(o => o.Default is not null && !OptionValues.ContainsKey(o.Name)))
+        {
+            OptionValues[o.Name] = o.Default!;
+        }
+    }
+
+    private static string? Get(Dictionary<string, string> d, string key, string? fallback) => d.TryGetValue(key, out var v) ? v : fallback;
+
+    private void Generate(ProfileSecret secret)
+    {
+        SecretValues[secret.Name] = Convert.ToBase64String(RandomNumberGenerator.GetBytes(Math.Max(secret.MinBytes ?? 32, 32)));
+        Generated.Add(secret.Name);
+    }
+}

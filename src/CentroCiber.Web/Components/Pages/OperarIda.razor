@@ -1,0 +1,173 @@
+@page "/"
+@page "/operar"
+@inject OperationsService Ops
+@inject ProfileCatalog Profiles
+
+<PageTitle>Operar (ida) · Atalaya</PageTitle>
+<h1>Operar (ida)</h1>
+<p class="subtitulo">Elige texto, archivo o imagen y un algoritmo. Los propios (HASHSHA, HMACSHA256) se ejecutan aquí; los demás se envían a su nodo dueño.</p>
+
+<div class="grid">
+    <div class="card">
+        <label for="alg">Algoritmo</label>
+        <select id="alg" value="@algCode" @onchange="OnAlgorithmChanged">
+            @foreach (var a in availability)
+            {
+                <option value="@a.Algorithm.Code">@a.Algorithm.Id. @a.Algorithm.Code — @Capital(a.Algorithm.ForwardName) (@(a.IsLocal ? "local" : a.ProviderNode ?? "sin proveedor"))@(a.Available ? "" : " · no disponible")</option>
+            }
+        </select>
+        @if (current is not null)
+        {
+            <p class="hint">@current.Algorithm.Name · @current.Algorithm.Category</p>
+            <div class="alerta @(current.Available ? "ok" : "warn")">@current.Reason</div>
+        }
+
+        <label>Contenido</label>
+        <div class="row" role="radiogroup">
+            <label class="hint"><input type="radio" name="modo" checked="@(mode == "text")" @onchange='() => mode = "text"' /> Texto</label>
+            <label class="hint"><input type="radio" name="modo" checked="@(mode == "file")" @onchange='() => mode = "file"' /> Archivo</label>
+            <label class="hint"><input type="radio" name="modo" checked="@(mode == "image")" @onchange='() => mode = "image"' /> Imagen</label>
+        </div>
+        @if (mode == "text")
+        {
+            <textarea @bind="text" placeholder="Escribe el mensaje…" aria-label="Mensaje"></textarea>
+        }
+        else
+        {
+            <InputFile OnChange="OnPayload" accept="@(mode == "image" ? "image/*" : null)" />
+            @if (payloadName is not null)
+            {
+                <p class="hint">@payloadName (@payload?.Length bytes)</p>
+            }
+        }
+
+        @if (profile?.Operations.GetValueOrDefault("forward")?.Inputs.Contains("cover") == true)
+        {
+            <label>Imagen portadora (PNG/BMP)</label>
+            <InputFile OnChange="OnCover" accept=".png,.bmp" />
+        }
+    </div>
+
+    <div class="card">
+        <h2 style="margin-top:0">Parámetros</h2>
+        <p class="hint">Formulario generado desde el @profileSource.</p>
+        <AlgorithmForm Profile="profile" Operation="forward" OptionValues="options" SecretValues="secrets" />
+        <div class="row" style="margin-top:16px">
+            <button class="btn" disabled="@(busy || current?.Available != true)" @onclick="RunAsync">@(busy ? "Procesando…" : Capital(current?.Algorithm.ForwardName ?? "Ejecutar"))</button>
+        </div>
+    </div>
+</div>
+
+@if (error is not null)
+{
+    <div class="alerta error" role="alert">@error</div>
+}
+@if (outcome is not null)
+{
+    <div class="card">
+        <div class="alerta ok">@outcome.Summary</div>
+        @if (outcome.Stored is { } s)
+        {
+            <p>Archivo: <b class="mono">@s.FileName</b> · productor <b>@s.ProducerNode</b></p>
+            <div class="row">
+                <a class="btn" href="descargas/paquete/@s.Id" target="_blank">Descargar zip</a>
+                <a class="btn secundario" href="/consultas">Ver en Consultas</a>
+            </div>
+            @if (outcome.Result.Manifest?.PublicParameters is { Count: > 0 } pp)
+            {
+                <h2>publicParameters</h2>
+                <pre>@string.Join("\n", pp.Select(kv => $"{kv.Key} = {kv.Value}"))</pre>
+            }
+        }
+    </div>
+}
+
+@code {
+    private IReadOnlyList<ProviderAvailability> availability = [];
+    private ProviderAvailability? current;
+    private AlgorithmProfile? profile;
+    private string profileSource = string.Empty;
+    private string algCode = AlgorithmCatalog.HashSha;
+    private string mode = "text";
+    private string text = string.Empty;
+    private byte[]? payload;
+    private string? payloadName;
+    private byte[]? cover;
+    private Dictionary<string, string> options = [];
+    private Dictionary<string, string> secrets = [];
+    private bool busy;
+    private string? error;
+    private OperationOutcome? outcome;
+
+    protected override async Task OnInitializedAsync()
+    {
+        availability = await Ops.AllAvailabilityAsync();
+        await SelectAsync(algCode);
+    }
+
+    private async Task OnAlgorithmChanged(ChangeEventArgs e) => await SelectAsync(e.Value?.ToString() ?? algCode);
+
+    private async Task SelectAsync(string c)
+    {
+        algCode = c;
+        current = availability.FirstOrDefault(a => a.Algorithm.Code == c);
+        (profile, profileSource) = await Profiles.GetAsync(c);
+        options = [];
+        secrets = [];
+        outcome = null;
+        error = null;
+    }
+
+    private async Task OnPayload(InputFileChangeEventArgs e) =>
+        (payload, payloadName) = (await Read(e.File), e.File.Name);
+
+    private async Task OnCover(InputFileChangeEventArgs e) => cover = await Read(e.File);
+
+    private static async Task<byte[]> Read(IBrowserFile file)
+    {
+        using var ms = new MemoryStream();
+        await using var s = file.OpenReadStream(ProtocolConstants.MaxBodyBytes);
+        await s.CopyToAsync(ms);
+        return ms.ToArray();
+    }
+
+    private async Task RunAsync()
+    {
+        busy = true;
+        error = null;
+        outcome = null;
+        try
+        {
+            var data = mode == "text" ? System.Text.Encoding.UTF8.GetBytes(text) : payload;
+            if (data is null)
+            {
+                throw new InvalidOperationException("Selecciona un archivo o escribe un mensaje.");
+            }
+
+            outcome = await Ops.ForwardAsync(new ForwardRequest
+            {
+                AlgorithmCode = algCode,
+                Payload = data,
+                PayloadMode = mode,
+                OriginalFileName = mode == "text" ? ProtocolConstants.DefaultTextFileName : payloadName!,
+                Cover = cover,
+                Options = options.Where(kv => !string.IsNullOrEmpty(kv.Value)).ToDictionary(),
+                Secrets = secrets.Where(kv => !string.IsNullOrEmpty(kv.Value)).ToDictionary(),
+            });
+        }
+        catch (ProtocolException ex)
+        {
+            error = $"{ex.Code}: {ex.Message}";
+        }
+        catch (Exception ex) when (ex is ProviderUnavailableException or InvalidOperationException)
+        {
+            error = ex.Message;
+        }
+        finally
+        {
+            busy = false;
+        }
+    }
+
+    private static string Capital(string s) => s.Length == 0 ? s : char.ToUpperInvariant(s[0]) + s[1..];
+}

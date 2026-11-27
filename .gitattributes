@@ -1,0 +1,9 @@
+# Finales de línea normalizados en el repositorio
+* text=auto eol=lf
+*.ps1 text eol=crlf
+*.cmd text eol=crlf
+# Los vectores de prueba se comparan byte a byte (hashes, firmas): nunca convertir
+vectores/** binary
+*.zip binary
+*.png binary
+*.pfx binary

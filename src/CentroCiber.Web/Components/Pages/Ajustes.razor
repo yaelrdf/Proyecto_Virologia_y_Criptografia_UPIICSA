@@ -1,0 +1,105 @@
+@page "/ajustes"
+@inject SettingsService Settings
+@inject NodeContext Node
+@inject Microsoft.Extensions.Configuration.IConfiguration Configuration
+@inject NodeDirectory Directory
+@inject AuditService Audit
+
+<PageTitle>Ajustes · Atalaya</PageTitle>
+<h1>Ajustes</h1>
+<p class="subtitulo">Configuración del nodo @Node.NodeId.</p>
+
+@if (s is not null)
+{
+    <div class="grid">
+        <div class="card">
+            <h2 style="margin-top:0">Variantes habilitadas</h2>
+            @foreach (var v in AllVariants)
+            {
+                <label class="hint"><input type="checkbox" checked="@variants.Contains(v)" @onchange="e => Toggle(v, (bool)e.Value!)" /> @v</label>
+            }
+            <h2>Recepción</h2>
+            <label class="hint"><input type="checkbox" @bind="s.AcceptingPackages" /> Aceptar paquetes en la bandeja (si no, responde <code>E-BUSY</code>)</label>
+            <h2>HTTPS</h2>
+            <label class="hint"><input type="checkbox" @bind="s.HttpsEnabled" /> Ofrecer HTTPS en el puerto @Node.Options.EffectiveHttpsPort (requiere reiniciar)</label>
+            <p class="hint">Estado actual: @(Node.HttpsActive ? "activo" : "inactivo").</p>
+            <button class="btn" @onclick="SaveAsync">Guardar</button>
+        </div>
+        <div class="card">
+            <h2 style="margin-top:0">Identidad</h2>
+            <p>Sujeto: <span class="mono">@Node.Identity.Certificate.Subject</span></p>
+            <p>Vigencia: @Node.Identity.Certificate.NotBefore.ToUniversalTime().ToString("yyyy-MM-dd", System.Globalization.CultureInfo.InvariantCulture) → @Node.Identity.Certificate.NotAfter.ToUniversalTime().ToString("yyyy-MM-dd", System.Globalization.CultureInfo.InvariantCulture)</p>
+            <p>Huella SHA-256:<br /><span class="huella">@Node.Identity.Thumbprint</span></p>
+            <p>PFX: <span class="mono">@Node.PfxPath</span> <span class="hint">(contraseña en <code>CC_PFX_PASSWORD</code>)</span></p>
+            <div class="alerta warn">Regenerar el certificado cambia la huella: los demás nodos verán una alerta y deberán confirmarlo de nuevo. HTTPS lo toma al reiniciar.</div>
+            <label class="hint"><input type="checkbox" @bind="confirmRegenerate" /> Entiendo que la huella cambiará</label>
+            <button class="btn peligro" disabled="@(!confirmRegenerate)" @onclick="RegenerateAsync">Regenerar certificado</button>
+            <h2>Límites (estándar v2.0)</h2>
+            <ul>
+                <li>Paquete y cuerpo: 50 MB; descomprimido: 200 MB; razón ≤ 100:1</li>
+                <li>Ventana de tiempo: ±10 min · tope síncrono: @Node.Options.SyncTimeoutSeconds s · retención de trabajos: 1 h</li>
+                <li>Peticiones <code>/api/crypto/*</code> simultáneas: @Node.Options.MaxConcurrentCryptoRequests</li>
+                <li>Carpeta de datos: <span class="mono">@Node.DataPath</span></li>
+            </ul>
+        </div>
+    </div>
+    @if (message is not null)
+    {
+        <div class="alerta ok">@message</div>
+    }
+    <h2>Bitácora reciente</h2>
+    <div class="tabla"><table>
+        <thead><tr><th>UTC</th><th>Evento</th><th>Nodo</th><th>Código</th><th>Detalle</th></tr></thead>
+        <tbody>
+        @foreach (var a in log)
+        {
+            <tr><td>@a.TimestampUtc.ToString("HH:mm:ss", System.Globalization.CultureInfo.InvariantCulture)</td><td>@a.Event</td><td>@a.NodeId</td><td>@a.Code</td><td>@a.Detail</td></tr>
+        }
+        </tbody>
+    </table></div>
+}
+
+@code {
+    private static readonly string[] AllVariants = ["SHA-256", "SHA-512", "HMAC-SHA256"];
+    private SettingsEntity? s;
+    private HashSet<string> variants = [];
+    private bool confirmRegenerate;
+    private string? message;
+    private IReadOnlyList<AuditLogEntity> log = [];
+
+    protected override async Task OnInitializedAsync()
+    {
+        s = await Settings.GetAsync();
+        variants = (await Settings.EnabledVariantsAsync()).ToHashSet();
+        log = await Audit.RecentAsync(20);
+    }
+
+    private void Toggle(string v, bool on)
+    {
+        if (on)
+        {
+            variants.Add(v);
+        }
+        else
+        {
+            variants.Remove(v);
+        }
+    }
+
+    private async Task SaveAsync()
+    {
+        s!.EnabledVariants = string.Join(',', AllVariants.Where(variants.Contains));
+        await Settings.SaveAsync(s);
+        message = "Ajustes guardados.";
+    }
+
+    private async Task RegenerateAsync()
+    {
+        var password = Configuration[CentroCiber.Infrastructure.Configuration.NodeOptions.PfxPasswordKey]!;
+        var fresh = Node.RegenerateIdentity(password);
+        await Directory.SyncSelfAsync();
+        await Audit.LogAsync("identity.regenerated", Node.NodeId, null, fresh.Thumbprint);
+        confirmRegenerate = false;
+        message = $"Certificado regenerado. Nueva huella: {fresh.Thumbprint}. Reinicia el nodo para que HTTPS lo use.";
+    }
+}

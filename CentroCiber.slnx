@@ -1,0 +1,20 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/CentroCiber.Application/CentroCiber.Application.csproj" />
+    <Project Path="src/CentroCiber.Crypto/CentroCiber.Crypto.csproj" />
+    <Project Path="src/CentroCiber.Discovery/CentroCiber.Discovery.csproj" />
+    <Project Path="src/CentroCiber.Infrastructure/CentroCiber.Infrastructure.csproj" />
+    <Project Path="src/CentroCiber.Packaging/CentroCiber.Packaging.csproj" />
+    <Project Path="src/CentroCiber.Web/CentroCiber.Web.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/CentroCiber.Api.Tests/CentroCiber.Api.Tests.csproj" />
+    <Project Path="tests/CentroCiber.Crypto.Tests/CentroCiber.Crypto.Tests.csproj" />
+    <Project Path="tests/CentroCiber.Packaging.Tests/CentroCiber.Packaging.Tests.csproj" />
+    <Project Path="tests/CentroCiber.Web.Tests/CentroCiber.Web.Tests.csproj" />
+  </Folder>
+  <Folder Name="/tools/">
+    <Project Path="tools/CentroCiber.MockNode/CentroCiber.MockNode.csproj" />
+    <Project Path="tools/CentroCiber.VectorGen/CentroCiber.VectorGen.csproj" />
+  </Folder>
+</Solution>
