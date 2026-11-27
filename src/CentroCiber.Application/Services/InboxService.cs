@@ -77,6 +77,28 @@ public sealed class InboxService(
         return await db.Requests.AsNoTracking().OrderByDescending(r => r.ReceivedUtc).ToListAsync(ct);
     }
 
+    public async Task<InboxRequestEntity?> GetAsync(int id, CancellationToken ct = default)
+    {
+        await using var db = await dbf.CreateDbContextAsync(ct);
+        return await db.Requests.AsNoTracking().FirstOrDefaultAsync(r => r.Id == id, ct);
+    }
+
+    /// <summary>Zip de una solicitud: pendiente (bandeja) o aceptada (Consultas); nulo si no hay.</summary>
+    public async Task<byte[]?> ReadZipAsync(InboxRequestEntity r, CancellationToken ct = default)
+    {
+        if (r.StoragePath is not null)
+        {
+            return await node.Store.ReadAsync(r.StoragePath, ct);
+        }
+
+        if (r.PackageId is { } id && await library.GetAsync(id, ct) is { StoragePath: not null } p)
+        {
+            return await library.ReadZipAsync(p, ct);
+        }
+
+        return null;
+    }
+
     /// <summary>Aceptar: inserta en Consultas con origen <c>Recibido</c>.</summary>
     public async Task<PackageEntity> AcceptAsync(int requestId, CancellationToken ct = default)
     {

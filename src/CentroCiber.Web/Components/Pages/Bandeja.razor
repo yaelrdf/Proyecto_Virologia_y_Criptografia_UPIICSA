@@ -1,0 +1,360 @@
+@page "/bandeja"
+@implements IDisposable
+@inject InboxService Inbox
+@inject PackageLibrary Library
+@inject SettingsService Settings
+@inject OperationsService Ops
+@inject ProfileCatalog Profiles
+@inject AuditService Audit
+@inject NodeContext Node
+@inject NotificationHub Hub
+
+<PageTitle>Bandeja · Atalaya</PageTitle>
+<h1>Bandeja</h1>
+<p class="subtitulo">Panel de pruebas: paquetes recibidos de otros equipos, con vista previa del texto o la imagen. Si el contenido está cifrado, descífralo con su clave (local o en el nodo dueño).</p>
+
+<div class="row" style="margin-bottom:12px">
+    <label class="hint"><input type="checkbox" checked="@autoAccept" @onchange="ToggleAutoAsync" /> Aceptar automáticamente los paquetes válidos</label>
+    <span class="hint">·</span>
+    @foreach (var f in new[] { "", RequestStates.Pending, RequestStates.Accepted, RequestStates.Rejected })
+    {
+        <button class="btn @(filter == f ? "" : "secundario") chico" @onclick="() => FilterAsync(f)">@(f == "" ? "Todas" : f)</button>
+    }
+</div>
+
+<div class="bandeja-grid">
+    <div class="card lista" role="list" aria-label="Paquetes recibidos">
+        @if (items.Count == 0)
+        {
+            <p class="hint">No hay paquetes recibidos.</p>
+        }
+        @foreach (var r in items)
+        {
+            <button class="item @(selected?.Id == r.Id ? "activo" : "")" role="listitem" @onclick="() => SelectAsync(r)">
+                <span><b>@r.SourceNode</b> · @r.AlgorithmCode · @r.OperationName</span>
+                <span class="row">
+                    <span class="badge @InboxTable.BadgeFor(r.ValidationResult)">@r.ValidationResult</span>
+                    <span class="badge info">@r.Status</span>
+                    @if (r.IsSample)
+                    {
+                        <span class="badge warn">ejemplo</span>
+                    }
+                </span>
+                <span class="hint">@r.ReceivedUtc.ToString("yyyy-MM-dd HH:mm:ss", System.Globalization.CultureInfo.InvariantCulture) UTC · @r.SourceIp</span>
+            </button>
+        }
+    </div>
+
+    <div class="card visor">
+        @if (selected is null)
+        {
+            <p class="hint">Selecciona un paquete de la lista.</p>
+        }
+        else
+        {
+            <h2 style="margin-top:0">@selected.FileName</h2>
+            @if (message is not null)
+            {
+                <div class="alerta @(messageOk ? "ok" : "error")">@message</div>
+            }
+            @if (selected.ErrorCode is not null)
+            {
+                <div class="alerta error">Rechazado al recibir: <b>@selected.ErrorCode</b></div>
+            }
+            @if (manifest is not null)
+            {
+                <table>
+                    <tbody>
+                        <tr><th>Remitente / productor</th><td>@manifest.SourceNode (@selected.SourceIp) / @manifest.ProducerNode</td></tr>
+                        <tr><th>Algoritmo</th><td>@manifest.AlgorithmId · @manifest.AlgorithmCode (@manifest.AlgorithmName) · @manifest.Operation — @manifest.OperationName</td></tr>
+                        <tr><th>Original</th><td>@manifest.OriginalFileName · @manifest.ContentType · @manifest.OriginalSizeBytes bytes · modo @manifest.PayloadMode</td></tr>
+                        <tr><th>packetId / fecha</th><td class="mono">@manifest.PacketId · @manifest.TimestampUtc</td></tr>
+                        @if (manifest.KeyRef is { } k)
+                        {
+                            <tr><th>keyRef</th><td class="mono">@k.KeyId (@k.OwnerNode)</td></tr>
+                        }
+                        @if (manifest.PublicParameters.Count > 0)
+                        {
+                            <tr><th>publicParameters</th><td><pre style="margin:0">@string.Join("\n", manifest.PublicParameters.Select(kv => $"{kv.Key} = {kv.Value}"))</pre></td></tr>
+                        }
+                        @if (manifest.Verification is { } v)
+                        {
+                            <tr><th>Verificación</th><td><span class="badge @(v.Valid ? "ok" : "error")">@(v.Valid ? "válido" : "no válido")</span> @v.Detail</td></tr>
+                        }
+                    </tbody>
+                </table>
+            }
+            <div class="row" style="margin:12px 0">
+                @if (selected.Status == RequestStates.Pending && !selected.IsSample)
+                {
+                    <button class="btn chico" @onclick="AcceptAsync">Aceptar</button>
+                    <button class="btn peligro chico" @onclick="RejectAsync">Rechazar</button>
+                }
+                @if (zip is not null)
+                {
+                    <a class="btn secundario chico" href="descargas/solicitud/@selected.Id" target="_blank">Descargar zip</a>
+                    <button class="btn secundario chico" @onclick="() => showManifest = !showManifest">Manifiesto</button>
+                }
+            </div>
+            @if (showManifest && selected.ManifestJson is not null)
+            {
+                <pre>@selected.ManifestJson</pre>
+            }
+
+            @if (manifest is not null && data is not null)
+            {
+                @if (readable)
+                {
+                    <PackagePreview Data="data" ContentType="@manifest.ContentType" PayloadMode="@manifest.PayloadMode" FileName="@manifest.OriginalFileName"
+                                    Title="Contenido (datos.enc es el original)"
+                                    ImageUrl="@($"descargas/datos/solicitud/{selected.Id}?inline=true")"
+                                    DownloadUrl="@($"descargas/datos/solicitud/{selected.Id}")" />
+                }
+                else if (decrypted is not null && decryptedId is { } rid)
+                {
+                    <PackagePreview Data="decrypted" ContentType="@manifest.ContentType" PayloadMode="@manifest.PayloadMode" FileName="@manifest.OriginalFileName"
+                                    Title="Original descifrado"
+                                    ImageUrl="@($"descargas/original/{rid}?inline=true")"
+                                    DownloadUrl="@($"descargas/original/{rid}")" />
+                }
+                else if (isResultForMe)
+                {
+                    <button class="btn" @onclick="OpenResultAsync">Abrir resultado (sobre CC-ENV-1 para @Node.NodeId)</button>
+                }
+                else
+                {
+                    <h2>Descifrar para ver el contenido</h2>
+                    @if (availability is not null)
+                    {
+                        <div class="alerta @(availability.Available ? "ok" : "warn")">@availability.Reason</div>
+                    }
+                    <AlgorithmForm Profile="profile" Operation="inverse" SecretValues="secrets" />
+                    <button class="btn" style="margin-top:12px" disabled="@(busy || availability?.Available != true)" @onclick="DecryptAsync">
+                        @(busy ? "Descifrando…" : "Descifrar")
+                    </button>
+                }
+            }
+        }
+    </div>
+</div>
+
+<h2>Rechazos recientes</h2>
+<p class="hint">Peticiones que este nodo rechazó y errores al enviar o delegar. Úsalos para depurar con el otro equipo.</p>
+<div class="tabla"><table>
+    <thead><tr><th>UTC</th><th>Evento</th><th>Nodo</th><th>Código</th><th>Detalle</th></tr></thead>
+    <tbody>
+        @if (rejections.Count == 0)
+        {
+            <tr><td colspan="5">Sin rechazos.</td></tr>
+        }
+        @foreach (var a in rejections)
+        {
+            <tr><td>@a.TimestampUtc.ToString("MM-dd HH:mm:ss", System.Globalization.CultureInfo.InvariantCulture)</td><td>@a.Event</td><td>@a.NodeId</td><td><span class="badge error">@a.Code</span></td><td>@a.Detail</td></tr>
+        }
+    </tbody>
+</table></div>
+
+@code {
+    private static readonly HashSet<string> ReadableCodes = ["HASHSHA", "HMACSHA256", "DIGITALSIG"];
+
+    private IReadOnlyList<InboxRequestEntity> items = [];
+    private IReadOnlyList<AuditLogEntity> rejections = [];
+    private InboxRequestEntity? selected;
+    private Manifest? manifest;
+    private byte[]? zip;
+    private byte[]? data;
+    private byte[]? decrypted;
+    private int? decryptedId;
+    private bool readable;
+    private bool isResultForMe;
+    private bool showManifest;
+    private bool autoAccept;
+    private bool busy;
+    private string filter = string.Empty;
+    private string? message;
+    private bool messageOk;
+    private AlgorithmProfile? profile;
+    private ProviderAvailability? availability;
+    private Dictionary<string, string> secrets = [];
+
+    protected override async Task OnInitializedAsync()
+    {
+        Hub.Published += OnEvent;
+        autoAccept = (await Settings.GetAsync()).AutoAcceptInbox;
+        await LoadAsync();
+    }
+
+    private async Task LoadAsync()
+    {
+        var all = await Inbox.ListAsync();
+        items = string.IsNullOrEmpty(filter) ? all : all.Where(r => r.Status == filter).ToList();
+        rejections = await Audit.RecentRejectionsAsync(15);
+    }
+
+    private async Task FilterAsync(string f)
+    {
+        filter = f;
+        await LoadAsync();
+    }
+
+    private void OnEvent(NodeEvent e)
+    {
+        if (e.Kind is NodeEventKind.InboxReceived or NodeEventKind.PackageStored)
+        {
+            _ = InvokeAsync(async () =>
+            {
+                await LoadAsync();
+                StateHasChanged();
+            });
+        }
+    }
+
+    private async Task ToggleAutoAsync(ChangeEventArgs e)
+    {
+        var s = await Settings.GetAsync();
+        s.AutoAcceptInbox = e.Value is true;
+        await Settings.SaveAsync(s);
+        autoAccept = s.AutoAcceptInbox;
+    }
+
+    private async Task SelectAsync(InboxRequestEntity r)
+    {
+        selected = r;
+        manifest = null;
+        zip = data = decrypted = null;
+        decryptedId = null;
+        message = null;
+        secrets = [];
+        showManifest = false;
+        zip = await Inbox.ReadZipAsync(r);
+        if (zip is null)
+        {
+            return;
+        }
+
+        try
+        {
+            var v = await Library.ValidateForStorageAsync(zip);
+            manifest = v.Manifest;
+            data = v.Data;
+            var isPackage = manifest.PacketType == ProtocolConstants.PacketTypePackage;
+            readable = isPackage && ReadableCodes.Contains(manifest.AlgorithmCode);
+            isResultForMe = !isPackage && manifest.ResultEnvelope?.RecipientThumbprintSha256 == Node.Identity.Thumbprint;
+            if (isPackage && !readable && AlgorithmCatalog.ByCode(manifest.AlgorithmCode) is { } info)
+            {
+                (profile, _) = await Profiles.GetAsync(info.Code);
+                availability = await Ops.AvailabilityAsync(info);
+            }
+        }
+        catch (ProtocolException ex)
+        {
+            (message, messageOk) = ($"{ex.Code}: {ex.Message}", false);
+        }
+    }
+
+    private async Task AcceptAsync()
+    {
+        try
+        {
+            await Inbox.AcceptAsync(selected!.Id);
+            (message, messageOk) = ("Aceptada: el paquete está en Consultas.", true);
+        }
+        catch (InvalidOperationException ex)
+        {
+            (message, messageOk) = (ex.Message, false);
+        }
+
+        await RefreshSelectedAsync();
+    }
+
+    private async Task RejectAsync()
+    {
+        try
+        {
+            await Inbox.RejectAsync(selected!.Id);
+            (message, messageOk) = ("Rechazada; el zip se descartó.", true);
+        }
+        catch (InvalidOperationException ex)
+        {
+            (message, messageOk) = (ex.Message, false);
+        }
+
+        await RefreshSelectedAsync();
+    }
+
+    private async Task RefreshSelectedAsync()
+    {
+        var keep = (message, messageOk);
+        await LoadAsync();
+        if (await Inbox.GetAsync(selected!.Id) is { } fresh)
+        {
+            await SelectAsync(fresh);
+        }
+
+        (message, messageOk) = keep;
+    }
+
+    private async Task DecryptAsync()
+    {
+        busy = true;
+        message = null;
+        try
+        {
+            var outcome = await Ops.InverseAsync(new InverseRequest
+            {
+                AlgorithmCode = manifest!.AlgorithmCode,
+                PackageZip = zip!,
+                Secrets = secrets.Where(kv => !string.IsNullOrEmpty(kv.Value)).ToDictionary(),
+            });
+            if (outcome.Result.IsPending)
+            {
+                (message, messageOk) = (outcome.Summary, true);
+            }
+            else
+            {
+                decrypted = outcome.Result.Original;
+                decryptedId = outcome.Stored?.Id;
+                var verdict = outcome.Result.Manifest?.Verification is { } v ? (v.Valid ? " Verificación: válida." : " Verificación: NO válida.") : string.Empty;
+                (message, messageOk) = ($"Descifrado por {outcome.Result.ProviderNode}.{verdict}", outcome.Result.Manifest?.Verification?.Valid != false);
+            }
+        }
+        catch (ProtocolException ex)
+        {
+            (message, messageOk) = ($"{ex.Code}: {ex.Message}", false);
+        }
+        catch (Exception ex) when (ex is ProviderUnavailableException or InvalidOperationException)
+        {
+            (message, messageOk) = (ex.Message, false);
+        }
+        finally
+        {
+            busy = false;
+            rejections = await Audit.RecentRejectionsAsync(15);
+        }
+    }
+
+    private async Task OpenResultAsync()
+    {
+        try
+        {
+            decrypted = await Library.OpenResultAsync(zip!);
+            if (selected!.PackageId is { } pid)
+            {
+                decryptedId = pid;
+            }
+            else
+            {
+                // Pendiente: se acepta para poder servir la imagen desde Consultas.
+                decryptedId = (await Inbox.AcceptAsync(selected.Id)).Id;
+            }
+
+            (message, messageOk) = ("Resultado abierto con la llave propia.", true);
+        }
+        catch (ProtocolException ex)
+        {
+            (message, messageOk) = ($"{ex.Code}: {ex.Message}", false);
+        }
+    }
+
+    public void Dispose() => Hub.Published -= OnEvent;
+}

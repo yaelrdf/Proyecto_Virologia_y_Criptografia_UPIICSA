@@ -101,3 +101,14 @@ th { background: #E8EEF4; color: var(--cc-azul); font-size: 13px; }
 #blazor-error-ui .reload { color: #FFFFFF; font-weight: 700; }
 #blazor-error-ui .dismiss { float: right; cursor: pointer; }
 h1:focus { outline: none; }
+
+/* Panel de pruebas: Bandeja y Enviar */
+.bandeja-grid { display: grid; grid-template-columns: minmax(260px, 360px) 1fr; gap: 16px; align-items: start; }
+@media (max-width: 860px) { .bandeja-grid { grid-template-columns: 1fr; } }
+.lista { padding: 8px; max-height: 70vh; overflow-y: auto; }
+.lista .item { display: flex; flex-direction: column; gap: 4px; width: 100%; text-align: left; background: #FFFFFF; border: 1px solid var(--cc-borde); border-radius: 8px; padding: 10px; margin-bottom: 6px; cursor: pointer; font: inherit; color: var(--cc-texto); }
+.lista .item.activo { border-color: var(--cc-verde); box-shadow: inset 4px 0 0 var(--cc-verde); }
+.visor table th { width: 180px; }
+.preview { border: 1px dashed var(--cc-borde); border-radius: var(--cc-radio); padding: 12px; margin-top: 12px; }
+.preview-text { white-space: pre-wrap; overflow-wrap: anywhere; max-height: 360px; }
+.preview-img { max-width: 100%; max-height: 420px; display: block; margin-top: 8px; border-radius: 6px; background: #E8EEF4; }

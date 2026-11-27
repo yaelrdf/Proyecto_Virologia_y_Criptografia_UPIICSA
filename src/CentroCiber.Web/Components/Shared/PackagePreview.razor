@@ -1,0 +1,51 @@
+@* Vista previa segura: texto plano o imagen raster detectada por bytes; lo demás solo se descarga. *@
+@using CentroCiber.Web.Api
+
+<div class="preview">
+    <div class="row" style="justify-content:space-between">
+        <span class="hint">@Title · <span class="mono">@FileName</span> · @(Data?.Length ?? 0) bytes</span>
+        @if (DownloadUrl is not null)
+        {
+            <a class="btn secundario chico" href="@DownloadUrl" target="_blank">Descargar</a>
+        }
+    </div>
+    @if (Data is null)
+    {
+        <p class="hint">Sin contenido para mostrar.</p>
+    }
+    else if (kind == PreviewType.Text)
+    {
+        <pre class="preview-text">@PreviewKind.TextPreview(Data)</pre>
+    }
+    else if (kind == PreviewType.Image && ImageUrl is not null)
+    {
+        <img class="preview-img" src="@ImageUrl" alt="Vista previa de @FileName" />
+    }
+    else
+    {
+        <p class="hint">Contenido binario (@mime): no se muestra en el navegador por seguridad. Usa «Descargar».</p>
+    }
+</div>
+
+@code {
+    [Parameter] public byte[]? Data { get; set; }
+
+    [Parameter] public string? ContentType { get; set; }
+
+    [Parameter] public string? PayloadMode { get; set; }
+
+    [Parameter] public string FileName { get; set; } = "contenido.bin";
+
+    [Parameter] public string Title { get; set; } = "Vista previa";
+
+    /// <summary>URL en línea (<c>?inline=true</c>) para mostrar imágenes.</summary>
+    [Parameter] public string? ImageUrl { get; set; }
+
+    [Parameter] public string? DownloadUrl { get; set; }
+
+    private PreviewType kind;
+    private string mime = string.Empty;
+
+    protected override void OnParametersSet() =>
+        (kind, mime) = Data is null ? (PreviewType.Binary, string.Empty) : PreviewKind.Detect(Data, ContentType, PayloadMode, FileName);
+}
