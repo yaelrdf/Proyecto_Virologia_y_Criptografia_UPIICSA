@@ -1,13 +1,16 @@
 name: Release
 
-# Publica una GitHub Release con los binarios autocontenidos al subir un tag vX.Y.Z.
+# Publica una GitHub Release con los binarios autocontenidos.
+# - Al subir un tag vX.Y.Z (git push origin vX.Y.Z), o
+# - a mano: Actions > Release > Run workflow, eligiendo la rama y escribiendo el tag (p. ej. v1.1.0).
+#   Si el tag no existe, la Release lo crea sobre el commit de la rama elegida.
 on:
   push:
     tags: ["v*"]
   workflow_dispatch:
     inputs:
       tag:
-        description: "Tag existente a publicar (p. ej. v1.1.0)"
+        description: "Tag a publicar (p. ej. v1.1.0); se crea si no existe"
         required: true
 
 permissions:
@@ -28,8 +31,6 @@ jobs:
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
-        with:
-          ref: ${{ env.TAG }}
       - uses: actions/setup-dotnet@v4
         with:
           dotnet-version: "10.0.x"
@@ -54,8 +55,6 @@ jobs:
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
-        with:
-          ref: ${{ env.TAG }}
       - uses: actions/setup-dotnet@v4
         with:
           dotnet-version: "10.0.x"
@@ -72,8 +71,6 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-        with:
-          ref: ${{ env.TAG }}
       - uses: actions/download-artifact@v4
         with:
           path: dist
@@ -96,6 +93,7 @@ jobs:
       - uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ env.TAG }}
+          target_commitish: ${{ github.sha }}
           name: Atalaya EQ08 ${{ env.TAG }}
           body_path: notes.md
           files: |

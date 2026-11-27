@@ -48,7 +48,10 @@ Cada versión se publica como [GitHub Release](https://github.com/yaelrdf/Proyec
 - `centrociber-eq08-win-x64-vX.Y.Z.zip`
 - `centrociber-eq08-linux-x64-vX.Y.Z.zip`
 
-La publicación la hace el workflow [`release.yml`](.github/workflows/release.yml) al subir un tag `vX.Y.Z`.
+La publicación la hace el workflow [`release.yml`](.github/workflows/release.yml), de una de dos formas:
+
+- al subir un tag `vX.Y.Z`;
+- a mano desde *Actions → Release → Run workflow*, eligiendo la rama y el tag; si el tag no existe, se crea.
 
 | Versión | Rama | Novedades |
 | --- | --- | --- |
