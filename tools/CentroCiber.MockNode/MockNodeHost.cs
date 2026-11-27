@@ -30,6 +30,15 @@ public sealed record MockNodeOptions
 
     /// <summary>Responder siempre 202 + jobId (para probar la consulta de trabajos).</summary>
     public bool AlwaysAsync { get; init; }
+
+    /// <summary>Variante observada en la red (EQ01): omitir del manifiesto los campos nulos (ADR 0014/0016).</summary>
+    public bool OmitNullFields { get; init; }
+
+    /// <summary>Variante observada (EQ01): el sobre CC-ENV-1 completo va dentro de resultado.enc (ADR 0017).</summary>
+    public bool EnvelopeInData { get; init; }
+
+    /// <summary>Variante observada: etiqueta GCM pegada al final del cifrado, sin tagBase64 (ADR 0017).</summary>
+    public bool AppendTag { get; init; }
 }
 
 /// <summary>
@@ -181,6 +190,11 @@ public sealed class MockNodeHost : IAsyncDisposable
             }
 
             CryptographicOperations.ZeroMemory(key);
+            if (options.OmitNullFields)
+            {
+                built = OmitNulls(built);
+            }
+
             if (options.AlwaysAsync)
             {
                 var jobId = Identifiers.NewUuid();
@@ -288,6 +302,26 @@ public sealed class MockNodeHost : IAsyncDisposable
 
         var packetId = Identifiers.NewUuid();
         var sealedResult = EnvelopeCrypto.Seal(plaintext, requesterCert, request.RequesterNode, packetId, includeCiphertext: false);
+        var resultData = sealedResult.Ciphertext;
+        CcEnvelope? manifestEnvelope = sealedResult.Envelope;
+        if (options.EnvelopeInData || options.AppendTag)
+        {
+            var env = new Dictionary<string, string?>
+            {
+                ["envelope"] = sealedResult.Envelope.Envelope,
+                ["recipientNode"] = sealedResult.Envelope.RecipientNode,
+                ["recipientThumbprintSha256"] = sealedResult.Envelope.RecipientThumbprintSha256,
+                ["wrappedKeyBase64"] = sealedResult.Envelope.WrappedKeyBase64,
+                ["nonceBase64"] = sealedResult.Envelope.NonceBase64,
+                ["tagBase64"] = options.AppendTag ? null : sealedResult.Envelope.TagBase64,
+                ["ciphertextBase64"] = Convert.ToBase64String(options.AppendTag
+                    ? [.. sealedResult.Ciphertext, .. Convert.FromBase64String(sealedResult.Envelope.TagBase64)]
+                    : sealedResult.Ciphertext),
+            };
+            resultData = JsonSerializer.SerializeToUtf8Bytes(env.Where(kv => kv.Value is not null).ToDictionary());
+            manifestEnvelope = null;
+        }
+
         return PackageBuilder.Build(new PackageContent
         {
             PacketType = ProtocolConstants.PacketTypeResult,
@@ -300,9 +334,33 @@ public sealed class MockNodeHost : IAsyncDisposable
             OriginalFileName = m.OriginalFileName,
             OriginalSizeBytes = plaintext.Length,
             ContentType = m.ContentType,
-            Data = sealedResult.Ciphertext,
-            ResultEnvelope = sealedResult.Envelope,
+            Data = resultData,
+            ResultEnvelope = manifestEnvelope,
         }, Identity, $"{options.BindAddress}:{Port}", TimeProvider.System);
+    }
+
+    /// <summary>Variante EQ01: quita del manifiesto los campos nulos (no están en la firma, así que sigue siendo válido).</summary>
+    private static BuiltPackage OmitNulls(BuiltPackage built)
+    {
+        using var input = new System.IO.Compression.ZipArchive(new MemoryStream(built.Zip), System.IO.Compression.ZipArchiveMode.Read);
+        var entries = input.Entries.ToDictionary(e => e.FullName, e =>
+        {
+            using var st = e.Open();
+            using var ms = new MemoryStream();
+            st.CopyTo(ms);
+            return ms.ToArray();
+        });
+        var node = System.Text.Json.Nodes.JsonNode.Parse(entries[ProtocolConstants.EntryManifest])!.AsObject();
+        foreach (var key in node.Where(kv => kv.Value is null).Select(kv => kv.Key).ToList())
+        {
+            node.Remove(key);
+        }
+
+        entries[ProtocolConstants.EntryManifest] = JsonSerializer.SerializeToUtf8Bytes(node);
+        var dataName = entries.ContainsKey(ProtocolConstants.EntryResult) ? ProtocolConstants.EntryResult : ProtocolConstants.EntryData;
+        var zip = ZipSafety.Write(new[] { dataName, ProtocolConstants.EntryCertificate, ProtocolConstants.EntryManifest }
+            .Select(n => (n, entries[n], n != dataName)), DateTimeOffset.UtcNow);
+        return built with { Zip = zip };
     }
 
     private static async Task<byte[]> Part(IFormCollection form, string name)

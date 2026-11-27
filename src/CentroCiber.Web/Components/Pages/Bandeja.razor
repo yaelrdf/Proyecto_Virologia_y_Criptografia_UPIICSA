@@ -69,6 +69,10 @@
                         <tr><th>Algoritmo</th><td>@manifest.AlgorithmId · @manifest.AlgorithmCode (@manifest.AlgorithmName) · @manifest.Operation — @manifest.OperationName</td></tr>
                         <tr><th>Original</th><td>@manifest.OriginalFileName · @manifest.ContentType · @manifest.OriginalSizeBytes bytes · modo @manifest.PayloadMode</td></tr>
                         <tr><th>packetId / fecha</th><td class="mono">@manifest.PacketId · @manifest.TimestampUtc</td></tr>
+                        @if (omitted.Count > 0)
+                        {
+                            <tr><th>Campos omitidos</th><td><span class="badge warn">ADR 0016</span> El remitente no envió: <span class="mono">@string.Join(", ", omitted)</span>. Se aceptó; avísale que §9.5 pide enviarlos.</td></tr>
+                        }
                         @if (manifest.KeyRef is { } k)
                         {
                             <tr><th>keyRef</th><td class="mono">@k.KeyId (@k.OwnerNode)</td></tr>
@@ -166,6 +170,7 @@
     private byte[]? decrypted;
     private int? decryptedId;
     private bool readable;
+    private IReadOnlyList<string> omitted = [];
     private bool isResultForMe;
     private bool showManifest;
     private bool autoAccept;
@@ -226,6 +231,7 @@
         message = null;
         secrets = [];
         showManifest = false;
+        omitted = [];
         zip = await Inbox.ReadZipAsync(r);
         if (zip is null)
         {
@@ -239,7 +245,10 @@
             data = v.Data;
             var isPackage = manifest.PacketType == ProtocolConstants.PacketTypePackage;
             readable = isPackage && ReadableCodes.Contains(manifest.AlgorithmCode);
-            isResultForMe = !isPackage && manifest.ResultEnvelope?.RecipientThumbprintSha256 == Node.Identity.Thumbprint;
+            isResultForMe = !isPackage && (manifest.ResultEnvelope?.RecipientThumbprintSha256 == Node.Identity.Thumbprint
+                || (CentroCiber.Crypto.Envelope.ResultEnvelopeOpener.TryParseEnvelopeInData(data, out var env)
+                    && (env.RecipientThumbprint is null || env.RecipientThumbprint == Node.Identity.Thumbprint)));
+            omitted = v.OmittedFields ?? [];
             if (isPackage && !readable && AlgorithmCatalog.ByCode(manifest.AlgorithmCode) is { } info)
             {
                 (profile, _) = await Profiles.GetAsync(info.Code);

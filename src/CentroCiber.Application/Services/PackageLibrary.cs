@@ -78,9 +78,9 @@ public sealed class PackageLibrary(
     {
         var validated = await validator.ValidateAsync(resultZip,
             PackageValidationOptions.ForInverse with { ExpectedPacketType = ProtocolConstants.PacketTypeResult }, ct);
-        var envelope = validated.Manifest.ResultEnvelope
-            ?? throw new ProtocolException(ErrorCodes.Manifest, "El resultado no trae resultEnvelope.");
-        return EnvelopeCrypto.OpenDetached(envelope, validated.Data, node.Identity, validated.Manifest.PacketId);
+        // ADR 0017: §8.3 más las variantes observadas (sobre en resultado.enc, etiqueta pegada, otro AAD).
+        return ResultEnvelopeOpener.Open(validated.Manifest.ResultEnvelope, validated.Data, node.Identity,
+            [validated.Manifest.PacketId, validated.Manifest.RequestId]);
     }
 
     /// <summary>Valida un paquete antes de guardarlo (sin ventana de tiempo ni anti-repetición).</summary>

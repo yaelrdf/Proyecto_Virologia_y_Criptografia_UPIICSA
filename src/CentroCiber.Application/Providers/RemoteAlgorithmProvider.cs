@@ -128,16 +128,16 @@ public sealed class RemoteAlgorithmProvider(
             return new OperationResult { PendingJobId = jobId, PendingRequestId = signed.Request.RequestId, ProviderNode = owner.NodeId };
         }
 
-        return await CompleteInverseAsync(zip, owner.NodeId, signed.Request.RequestId, ct);
+        return await CompleteInverseAsync(zip, owner.NodeId, signed.Request.RequestId, ct, source.Manifest.PacketId);
     }
 
     /// <summary>Valida un <c>result</c> y abre su <c>resultEnvelope</c> con la llave propia (§11.4).</summary>
-    public async Task<OperationResult> CompleteInverseAsync(byte[] zip, string ownerNode, string requestId, CancellationToken ct)
+    public async Task<OperationResult> CompleteInverseAsync(byte[] zip, string ownerNode, string requestId, CancellationToken ct, string? sourcePacketId = null)
     {
         var result = await ValidateResponseAsync(zip, ownerNode, ProtocolConstants.PacketTypeResult, requestId, ct);
-        var envelope = result.Manifest.ResultEnvelope
-            ?? throw new ProtocolException(ErrorCodes.Manifest, "El resultado no trae resultEnvelope.");
-        var original = EnvelopeCrypto.OpenDetached(envelope, result.Data, node.Identity, result.Manifest.PacketId);
+        // ADR 0017: AAD estándar = packetId del resultado; se toleran requestId y packetId de origen.
+        var original = ResultEnvelopeOpener.Open(result.Manifest.ResultEnvelope, result.Data, node.Identity,
+            [result.Manifest.PacketId, requestId, result.Manifest.RequestId, sourcePacketId]);
         await directory.UpdateOperationAsync(requestId, ProtocolConstants.JobDone, null, null, null, null, ct);
         return new OperationResult
         {

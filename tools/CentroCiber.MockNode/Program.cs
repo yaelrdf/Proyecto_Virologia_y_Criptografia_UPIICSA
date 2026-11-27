@@ -3,7 +3,7 @@ using System.Globalization;
 namespace CentroCiber.MockNode;
 
 /// <summary>
-/// Herramienta: <c>dotnet run --project tools/CentroCiber.MockNode -- [--port 5001] [--team 1] [--bind 0.0.0.0] [--async]</c>
+/// Herramienta: <c>dotnet run --project tools/CentroCiber.MockNode -- [--port 5001] [--team 1] [--bind 0.0.0.0] [--async] [--omit-nulls] [--envelope-in-data] [--append-tag]</c>
 /// </summary>
 internal static class MockNodeProgram
 {
@@ -15,6 +15,9 @@ internal static class MockNodeProgram
             TeamNumber = int.Parse(Arg(args, "--team") ?? "1", CultureInfo.InvariantCulture),
             BindAddress = Arg(args, "--bind") ?? "127.0.0.1",
             AlwaysAsync = args.Contains("--async"),
+            OmitNullFields = args.Contains("--omit-nulls"),
+            EnvelopeInData = args.Contains("--envelope-in-data"),
+            AppendTag = args.Contains("--append-tag"),
         };
         await using var node = await MockNodeHost.StartAsync(options);
         Console.WriteLine($"MockNode {node.NodeId} (AESGCM) en http://{options.BindAddress}:{node.Port}");

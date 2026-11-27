@@ -56,6 +56,31 @@ public class DelegationTests
         mock.InverseCalls.ShouldBe(1);
     }
 
+    [Theory] // ADR 0016/0017: variantes de EQ01 observadas en RelayCryptoNode (EQ06)
+    [InlineData(true, false, false)]
+    [InlineData(false, true, false)]
+    [InlineData(false, true, true)]
+    [InlineData(true, true, true)]
+    public async Task Delegation_tolerates_owner_variants(bool omitNulls, bool envelopeInData, bool appendTag)
+    {
+        await using var mock = await MockNodeHost.StartAsync(new MockNodeOptions
+        {
+            OmitNullFields = omitNulls,
+            EnvelopeInData = envelopeInData,
+            AppendTag = appendTag,
+        });
+        await using var eq08 = await RealNode.StartAsync(8);
+        await TrustAsync(eq08, mock.Port);
+        var ops = eq08.Services.GetRequiredService<OperationsService>();
+        var fwd = await ops.ForwardAsync(AesForward("variante EQ01"));
+        var inv = await ops.InverseAsync(new InverseRequest { AlgorithmCode = "AESGCM", PackageZip = fwd.Result.Zip!, Secrets = AesKey });
+        inv.Result.Original.ShouldBe(Encoding.UTF8.GetBytes("variante EQ01"));
+
+        // Consultas también abre el resultado guardado (descarga del original).
+        var library = eq08.Services.GetRequiredService<PackageLibrary>();
+        (await library.OpenResultAsync(await library.ReadZipAsync(inv.Stored!))).ShouldBe(Encoding.UTF8.GetBytes("variante EQ01"));
+    }
+
     [Fact] // Estándar §14: errores del dueño llegan como problem+json con su código
     public async Task Owner_problem_is_propagated()
     {
