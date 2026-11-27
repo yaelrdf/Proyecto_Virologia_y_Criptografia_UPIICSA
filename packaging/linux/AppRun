@@ -1,0 +1,124 @@
+#!/usr/bin/env bash
+# Launcher of the EQ08 node inside the AppImage.
+# - The AppImage is read-only: data (SQLite, identidad.pfx, paquetes) goes to a writable folder.
+# - If CC_PFX_PASSWORD is not defined, it is requested (terminal, zenity or kdialog).
+# - Opens the web interface in the default browser once the node is listening.
+set -euo pipefail
+
+HERE="$(dirname "$(readlink -f "$0")")"
+APP_DIR="$HERE/usr/lib/centrociber-eq08"
+BIN="$APP_DIR/CentroCiber.Web"
+TITLE="Atalaya EQ08"
+
+# Content root = published folder (appsettings.json and wwwroot), regardless of the current directory.
+export ASPNETCORE_CONTENTROOT="$APP_DIR"
+export DOTNET_CLI_TELEMETRY_OPTOUT=1
+# Writable data folder; CC_Node__DataPath may be overridden by the user.
+DATA_DIR="${CC_Node__DataPath:-${XDG_DATA_HOME:-$HOME/.local/share}/centrociber-eq08}"
+export CC_Node__DataPath="$DATA_DIR"
+mkdir -p "$DATA_DIR"
+
+case "${1:-}" in
+  -h|--help|--ayuda)
+    cat <<EOF
+$TITLE — nodo del Centro de Ciberseguridad Comunitario.
+
+Uso: $(basename "${APPIMAGE:-$0}") [argumentos de ASP.NET Core]
+
+Variables de entorno:
+  CC_PFX_PASSWORD      Contraseña del certificado (si falta, se pregunta).
+  CC_Node__DataPath    Carpeta de datos (por defecto: $DATA_DIR).
+  CC_NO_BROWSER=1      No abrir el navegador al iniciar.
+  Cualquier ajuste CC_Node__* (ver docs/manuales/Manual_Instalacion_Configuracion.md).
+EOF
+    exit 0 ;;
+esac
+
+interactive=0
+[[ -t 0 && -t 1 ]] && interactive=1
+
+notify_error() {
+  if [[ $interactive -eq 1 ]]; then echo "Error: $1" >&2
+  elif command -v zenity >/dev/null 2>&1; then zenity --error --title="$TITLE" --text="$1" || true
+  elif command -v kdialog >/dev/null 2>&1; then kdialog --title "$TITLE" --error "$1" || true
+  else echo "Error: $1" >&2; fi
+}
+
+# 1. Certificate password.
+if [[ -z "${CC_PFX_PASSWORD:-}" ]]; then
+  prompt="Contraseña del certificado del nodo (identidad.pfx).
+Si es el primer inicio, se creará un certificado nuevo protegido con ella."
+  if [[ $interactive -eq 1 ]]; then
+    echo "$prompt"
+    read -r -s -p "Contraseña: " CC_PFX_PASSWORD; echo
+  elif command -v zenity >/dev/null 2>&1; then
+    CC_PFX_PASSWORD="$(zenity --password --title="$TITLE" 2>/dev/null)" || exit 1
+  elif command -v kdialog >/dev/null 2>&1; then
+    CC_PFX_PASSWORD="$(kdialog --title "$TITLE" --password "$prompt" 2>/dev/null)" || exit 1
+  else
+    echo "Define CC_PFX_PASSWORD o ejecuta el AppImage desde una terminal." >&2
+    exit 1
+  fi
+  if [[ -z "$CC_PFX_PASSWORD" ]]; then
+    notify_error "La contraseña no puede estar vacía."
+    exit 1
+  fi
+fi
+export CC_PFX_PASSWORD
+
+# 2. Open the browser when the HTTP port answers (default 5008 = 5000 + team number).
+PORT="${CC_Node__HttpPort:-0}"
+[[ "$PORT" == "0" ]] && PORT=5008
+URL="http://localhost:$PORT/"
+open_browser() {
+  [[ "${CC_NO_BROWSER:-0}" == "1" ]] && return 0
+  command -v xdg-open >/dev/null 2>&1 || return 0
+  for _ in $(seq 1 60); do
+    if (exec 3<>"/dev/tcp/127.0.0.1/$PORT") 2>/dev/null; then
+      xdg-open "$URL" >/dev/null 2>&1 || true
+      return 0
+    fi
+    sleep 1
+  done
+}
+
+# 3. Run the node.
+if [[ $interactive -eq 1 ]]; then
+  echo "Datos: $DATA_DIR"
+  echo "Interfaz: $URL  (Ctrl+C para detener)"
+  open_browser &
+  exec "$BIN" "$@"
+fi
+
+# Without a terminal (double click): log to file and offer a dialog to stop the node.
+LOG_DIR="$DATA_DIR/logs"
+mkdir -p "$LOG_DIR"
+LOG="$LOG_DIR/eq08.log"
+"$BIN" "$@" >>"$LOG" 2>&1 &
+PID=$!
+trap 'kill "$PID" 2>/dev/null || true' EXIT INT TERM
+sleep 3
+if ! kill -0 "$PID" 2>/dev/null; then
+  notify_error "El nodo no pudo iniciar. Revisa el registro: $LOG
+$(tail -n 5 "$LOG")"
+  exit 1
+fi
+open_browser &
+msg="El nodo EQ08 está en ejecución.
+Interfaz: $URL
+Datos: $DATA_DIR
+
+Pulsa Aceptar para detener el nodo."
+started=$SECONDS
+rc=0
+if command -v zenity >/dev/null 2>&1; then
+  zenity --info --title="$TITLE" --text="$msg" 2>/dev/null || rc=$?
+elif command -v kdialog >/dev/null 2>&1; then
+  kdialog --title "$TITLE" --msgbox "$msg" 2>/dev/null || rc=$?
+else
+  rc=127
+fi
+# The dialog could not be shown (no display, broken X forwarding): keep running until the node exits.
+if [[ $rc -ne 0 && $((SECONDS - started)) -lt 2 ]]; then
+  wait "$PID"
+fi

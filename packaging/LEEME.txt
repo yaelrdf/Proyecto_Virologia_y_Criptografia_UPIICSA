@@ -1,0 +1,29 @@
+Atalaya EQ08 — Nodo del Centro de Ciberseguridad Comunitario
+=============================================================
+
+Aplicación autocontenida: no necesita instalar .NET.
+
+WINDOWS
+  1. Descomprime el zip en una carpeta con permiso de escritura.
+  2. Doble clic en «Iniciar EQ08.cmd».
+  3. Escribe la contraseña del certificado. En el primer inicio se crea
+     data\identidad.pfx protegido con esa contraseña; guárdala.
+  4. El navegador abre http://localhost:5008/. Cierra la ventana para detener el nodo.
+  Si SmartScreen avisa de un editor desconocido: «Más información» → «Ejecutar de todas formas».
+  Para recibir peticiones de otros equipos abre los puertos (scripts\firewall-windows.ps1
+  en el repositorio): TCP 5008, TCP 5108 y UDP 5099.
+
+LINUX (AppImage)
+  1. chmod +x CentroCiber-EQ08-*-x86_64.AppImage
+  2. Ejecútalo desde una terminal o con doble clic. Pide la contraseña del
+     certificado (terminal, zenity o kdialog) y abre http://localhost:5008/.
+  Datos: ~/.local/share/centrociber-eq08 (cámbialo con CC_Node__DataPath).
+  Sin FUSE: ./CentroCiber-EQ08-*.AppImage --appimage-extract-and-run
+
+VARIABLES ÚTILES
+  CC_PFX_PASSWORD     contraseña del certificado (evita la pregunta)
+  CC_Node__DataPath   carpeta de datos
+  CC_NO_BROWSER=1     no abrir el navegador
+  CC_Node__*          cualquier ajuste (ver Manual de instalación y configuración)
+
+Licencia: GPL-3.0 (LICENSE.txt).

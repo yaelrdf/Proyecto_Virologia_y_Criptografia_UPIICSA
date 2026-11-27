@@ -1,0 +1,9 @@
+[Desktop Entry]
+Type=Application
+Name=Atalaya EQ08
+GenericName=Nodo de ciberseguridad comunitario
+Comment=Nodo EQ08 del Centro de Ciberseguridad Comunitario (HASHSHA, HMACSHA256)
+Exec=AppRun
+Icon=centrociber-eq08
+Terminal=false
+Categories=Network;Security;

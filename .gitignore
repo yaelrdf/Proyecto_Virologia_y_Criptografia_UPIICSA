@@ -88,3 +88,4 @@ __pycache__/
 publish/
 # Los vectores públicos de prueba (llave marcada PRUEBA) sí se versionan
 !vectores/**
+dist/

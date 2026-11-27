@@ -4,6 +4,19 @@ Todos los cambios relevantes del nodo EQ08 se documentan aquí. El formato sigue
 
 ## [Sin publicar]
 
+## [1.0.0] - 2026-11-27
+
+Primera versión publicada. Artefactos: `CentroCiber-EQ08-1.0.0-x86_64.AppImage` (Linux), `CentroCiber-EQ08-1.0.0-win-x64.zip` (Windows, con `CentroCiber.Web.exe`) y `SHA256SUMS.txt`.
+
+### Distribución
+
+#### Agregado
+
+- AppImage para Linux x86_64 (`packaging/linux/AppRun`): guarda los datos en `~/.local/share/centrociber-eq08`, pide la contraseña del certificado (terminal, zenity o kdialog) si falta `CC_PFX_PASSWORD` y abre la interfaz en el navegador.
+- Zip portátil para Windows x64 con `Iniciar EQ08.cmd` / `iniciar-eq08.ps1`: pide la contraseña sin eco, guarda los datos en `data\` junto al ejecutable y abre el navegador.
+- Icono de la aplicación en `CentroCiber.Web.exe` y en el AppImage.
+- `scripts/package-release.sh` (appimagetool 1.9.1 fijado por SHA-256) y flujo `.github/workflows/release.yml`: al empujar una etiqueta `vX.Y.Z` corre la CI, empaqueta, hace una prueba de humo del AppImage (Ubuntu) y del `.exe` (Windows) y publica la versión en GitHub.
+
 ### Fase 9 — Conformidad, vectores y documentación
 
 #### Agregado

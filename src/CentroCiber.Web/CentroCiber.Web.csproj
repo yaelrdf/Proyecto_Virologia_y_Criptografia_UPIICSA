@@ -3,6 +3,7 @@
     <BlazorDisableThrowNavigationException>true</BlazorDisableThrowNavigationException>
     <AssemblyName>CentroCiber.Web</AssemblyName>
     <UserSecretsId>centrociber-eq08-dev</UserSecretsId>
+    <ApplicationIcon>atalaya.ico</ApplicationIcon>
   </PropertyGroup>
   <ItemGroup>
     <PackageReference Include="Microsoft.AspNetCore.OpenApi" />

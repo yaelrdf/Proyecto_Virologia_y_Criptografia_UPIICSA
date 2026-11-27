@@ -16,9 +16,21 @@ Este manual explica cómo instalar el nodo EQ08 en **Windows** y en **Linux**, a
 
 ## 2. Obtener el programa
 
-### Opción A — binario publicado (recomendado para la demo)
+### Opción A — versión publicada (recomendado para la demo)
 
-Descarga el artefacto `centrociber-eq08-win-x64` o `centrociber-eq08-linux-x64` de la última ejecución de la CI (pestaña *Actions* del repositorio) y descomprímelo en una carpeta propia, por ejemplo `C:\Atalaya` o `~/atalaya`. Es **autocontenido**: no necesita .NET instalado.
+Descarga la última versión de la pestaña *Releases* del repositorio y comprueba la suma con `SHA256SUMS.txt`. Ambos paquetes son **autocontenidos**: no necesitan .NET instalado.
+
+| Sistema | Archivo | Cómo iniciarlo | Carpeta de datos |
+| --- | --- | --- | --- |
+| Linux x86_64 | `CentroCiber-EQ08-<versión>-x86_64.AppImage` | `chmod +x` y ejecutarlo (terminal o doble clic) | `~/.local/share/centrociber-eq08` |
+| Windows x64 | `CentroCiber-EQ08-<versión>-win-x64.zip` | Descomprimir y doble clic en `Iniciar EQ08.cmd` | `data\` junto a `CentroCiber.Web.exe` |
+
+Los lanzadores piden la contraseña del certificado si `CC_PFX_PASSWORD` no está definida (sección 3), fijan la raíz de contenido y abren `http://localhost:5008/`. Con `CC_NO_BROWSER=1` no abren el navegador y con `CC_Node__DataPath` se cambia la carpeta de datos.
+
+- **Linux sin terminal:** la contraseña se pide con zenity o kdialog y un diálogo permite detener el nodo; el registro queda en `<datos>/logs/eq08.log`. Sin FUSE: `./CentroCiber-EQ08-*.AppImage --appimage-extract-and-run`.
+- **Windows:** el ejecutable no está firmado; si SmartScreen avisa, usa «Más información» → «Ejecutar de todas formas». Cerrar la ventana detiene el nodo. También puede ejecutarse `CentroCiber.Web.exe` directamente desde su carpeta con `CC_PFX_PASSWORD` definida.
+
+Las versiones se generan con `scripts/package-release.sh` (dejan los archivos en `dist/`) y se publican solas al empujar una etiqueta `vX.Y.Z` (flujo `.github/workflows/release.yml`). Los artefactos de cada ejecución de la CI (*Actions*) siguen disponibles como carpeta sin lanzador.
 
 ### Opción B — publicarlo tú
 

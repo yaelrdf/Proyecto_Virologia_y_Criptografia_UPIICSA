@@ -49,7 +49,17 @@ Hay más detalle en el [Manual técnico](docs/manuales/Manual_Tecnico.md).
 
 ## Inicio rápido
 
-### Linux
+### Versión publicada (sin instalar .NET)
+
+Descarga de *Releases* el **AppImage** (Linux) o el **zip de Windows** (`CentroCiber.Web.exe`):
+
+```bash
+chmod +x CentroCiber-EQ08-1.0.0-x86_64.AppImage && ./CentroCiber-EQ08-1.0.0-x86_64.AppImage
+```
+
+En Windows, descomprime el zip y haz doble clic en `Iniciar EQ08.cmd`. Ambos piden la contraseña del certificado y abren la interfaz; detalles en el [Manual de instalación y configuración](docs/manuales/Manual_Instalacion_Configuracion.md#opción-a--versión-publicada-recomendado-para-la-demo).
+
+### Linux (desde el código)
 
 ```bash
 git clone <este-repositorio> && cd Proyecto_Virologia_y_Criptografia_UPIICSA
@@ -61,7 +71,7 @@ dotnet run --project src/CentroCiber.Web
 sudo scripts/firewall-linux.sh 8   # abre 5008/tcp, 5108/tcp y 5099/udp
 ```
 
-### Windows (PowerShell)
+### Windows (PowerShell, desde el código)
 
 ```powershell
 $env:CC_PFX_PASSWORD = "una-contraseña-larga"
@@ -131,7 +141,8 @@ src/CentroCiber.Infrastructure EF Core + SQLite, migraciones, semilla, HTTP con 
 tests/                        xUnit (Crypto, Packaging, Api, Web/bUnit) e interop/ en Python
 tools/                        MockNode (EQ01 simulado) y VectorGen (vectores §16.1)
 vectores/EQ08/                Vectores públicos de prueba (llave marcada PRUEBA)
-scripts/                      Firewall, publicación, dos nodos, OpenAPI, configuración de la nube
+scripts/                      Firewall, publicación, versiones (package-release.sh), dos nodos, OpenAPI, nube
+packaging/                    Lanzadores del AppImage (Linux) y del zip portátil de Windows
 docs/                         Estándar, plan, manuales, API, BD, backlog, ADR, interoperabilidad
 ```
 

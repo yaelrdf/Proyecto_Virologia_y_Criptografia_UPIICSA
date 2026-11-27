@@ -1,0 +1,153 @@
+name: Release
+
+# Publica una versión al empujar una etiqueta vX.Y.Z:
+#   pruebas (CI completa) → empaquetado (AppImage + zip de Windows) → prueba de humo en cada SO → GitHub Release.
+on:
+  push:
+    tags: ["v*.*.*"]
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Etiqueta existente a publicar (p. ej. v1.0.0)"
+        required: true
+
+permissions:
+  contents: read
+
+env:
+  DOTNET_CLI_TELEMETRY_OPTOUT: "1"
+  DOTNET_NOLOGO: "1"
+  TAG: ${{ inputs.tag || github.ref_name }}
+
+jobs:
+  ci:
+    name: Pruebas
+    uses: ./.github/workflows/ci.yml
+
+  package:
+    name: Empaquetar
+    needs: ci
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ env.TAG }}
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "10.0.x"
+
+      - name: Verificar que la etiqueta coincide con <Version>
+        shell: bash
+        run: |
+          props="$(sed -n 's:.*<Version>\(.*\)</Version>.*:\1:p' Directory.Build.props)"
+          if [[ "v$props" != "$TAG" ]]; then
+            echo "::error::La etiqueta $TAG no coincide con <Version>$props</Version> de Directory.Build.props"
+            exit 1
+          fi
+
+      - name: AppImage y zip de Windows
+        run: bash scripts/package-release.sh "$TAG"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: release-dist
+          path: dist/
+          if-no-files-found: error
+
+  smoke-linux:
+    name: Prueba de humo (AppImage)
+    needs: package
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: release-dist
+          path: dist
+
+      - name: Iniciar el AppImage y consultar la API y la interfaz
+        shell: bash
+        env:
+          CC_PFX_PASSWORD: humo-ci
+          CC_NO_BROWSER: "1"
+          CC_Node__Discovery__Enabled: "false"
+        run: |
+          app="$(ls dist/*.AppImage)"
+          chmod +x "$app"
+          export CC_Node__DataPath="$RUNNER_TEMP/eq08-data"
+          "$app" --appimage-extract-and-run > "$RUNNER_TEMP/eq08.log" 2>&1 &
+          for i in $(seq 1 60); do curl -fs http://localhost:5008/api/algorithms >/dev/null && break; sleep 1; done
+          curl -fsS http://localhost:5008/api/algorithms
+          curl -fsS -o /dev/null http://localhost:5008/
+          curl -fsS -o /dev/null http://localhost:5008/app.css
+          curl -fsSk -o /dev/null https://localhost:5108/api/algorithms
+          test -f "$CC_Node__DataPath/identidad.pfx"
+          cat "$RUNNER_TEMP/eq08.log"
+
+  smoke-windows:
+    name: Prueba de humo (Windows .exe)
+    needs: package
+    runs-on: windows-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: release-dist
+          path: dist
+
+      - name: Iniciar CentroCiber.Web.exe y consultar la API y la interfaz
+        shell: pwsh
+        env:
+          CC_PFX_PASSWORD: humo-ci
+          CC_Node__Discovery__Enabled: "false"
+        run: |
+          $zip = Get-ChildItem dist/*-win-x64.zip | Select-Object -First 1
+          Expand-Archive $zip.FullName -DestinationPath "$env:RUNNER_TEMP\eq08"
+          $dir = Get-ChildItem "$env:RUNNER_TEMP\eq08" -Directory | Select-Object -First 1
+          $env:ASPNETCORE_CONTENTROOT = $dir.FullName
+          $env:CC_Node__DataPath = Join-Path $dir.FullName 'data'
+          $p = Start-Process -FilePath (Join-Path $dir.FullName 'CentroCiber.Web.exe') -WorkingDirectory $env:RUNNER_TEMP -PassThru `
+            -RedirectStandardOutput "$env:RUNNER_TEMP\eq08.out" -RedirectStandardError "$env:RUNNER_TEMP\eq08.err"
+          $ok = $false
+          for ($i = 0; $i -lt 60 -and -not $ok; $i++) {
+            try { Invoke-WebRequest http://localhost:5008/api/algorithms -UseBasicParsing | Out-Null; $ok = $true } catch { Start-Sleep 1 }
+          }
+          Get-Content "$env:RUNNER_TEMP\eq08.out", "$env:RUNNER_TEMP\eq08.err"
+          if (-not $ok) { throw 'El nodo no respondió en http://localhost:5008' }
+          (Invoke-WebRequest http://localhost:5008/api/algorithms -UseBasicParsing).Content
+          Invoke-WebRequest http://localhost:5008/ -UseBasicParsing | Out-Null
+          Invoke-WebRequest http://localhost:5008/app.css -UseBasicParsing | Out-Null
+          Invoke-WebRequest https://localhost:5108/api/algorithms -UseBasicParsing -SkipCertificateCheck | Out-Null
+          if (-not (Test-Path (Join-Path $env:CC_Node__DataPath 'identidad.pfx'))) { throw 'No se creó identidad.pfx' }
+          Stop-Process -Id $p.Id
+
+  publish:
+    name: Publicar GitHub Release
+    needs: [smoke-linux, smoke-windows]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ env.TAG }}
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: release-dist
+          path: dist
+
+      - name: Notas de la versión desde CHANGELOG.md
+        shell: bash
+        run: |
+          version="${TAG#v}"
+          awk -v v="$version" '
+            $0 ~ "^## \\[" v "\\]" {on=1; next}
+            on && /^## \[/ {exit}
+            on {print}
+          ' CHANGELOG.md > notes.md
+          test -s notes.md || { echo "::error::CHANGELOG.md no tiene la sección [$version]"; exit 1; }
+
+      - name: Crear la versión
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release create "$TAG" dist/* --title "Atalaya EQ08 $TAG" --notes-file notes.md --verify-tag
