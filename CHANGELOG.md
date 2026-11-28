@@ -16,7 +16,10 @@ Se revisó [RelayCryptoNode](https://github.com/Vidruck/RelayCryptoNode) solo co
 - Los perfiles ajenos pueden traer `notes`, y la interfaz las muestra.
 - **Enviar** pide la imagen portadora (`cover`) cuando el perfil del dueño la exige (`LSBSTEGO`). La **Bandeja** previsualiza `datos.enc` cuando es una imagen.
 - `MockNode`: opciones `--omit-nulls`, `--envelope-in-data` y `--append-tag` para imitar las variantes observadas en EQ01.
-- Workflow `release.yml`: al subir un tag `vX.Y.Z` prueba en Ubuntu y Windows, publica los binarios autocontenidos y crea la GitHub Release con las notas del CHANGELOG y `SHA256SUMS.txt`.
+- Workflow `release.yml`: al subir un tag `vX.Y.Z`, o al ejecutarlo a mano, prueba en Ubuntu y Windows y crea la GitHub Release con las notas del CHANGELOG y `SHA256SUMS.txt`.
+- Descargas de la Release:
+  - **Windows**: `.zip` portable con el lanzador `Iniciar-Atalaya.cmd`, que pide la contraseña sin mostrarla y abre el navegador.
+  - **Linux**: **AppImage** (`scripts/build-appimage.sh`), que guarda los datos en `~/.local/share/atalaya-eq08`. La CI la prueba antes de publicar.
 
 #### Cambiado
 

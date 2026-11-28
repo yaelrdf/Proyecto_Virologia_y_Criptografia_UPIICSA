@@ -1,0 +1,8 @@
+[Desktop Entry]
+Type=Application
+Name=Atalaya EQ08
+Comment=Nodo EQ08 del Centro de Ciberseguridad Comunitario
+Exec=AppRun
+Icon=atalaya-eq08
+Terminal=true
+Categories=Network;Security;

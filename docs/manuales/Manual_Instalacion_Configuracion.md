@@ -18,15 +18,36 @@ Este manual explica cómo instalar el nodo EQ08 en **Windows** y en **Linux**, a
 
 ### Opción A — GitHub Release (recomendado para la demo)
 
-1. Entra a la página de *Releases* del repositorio y abre la última versión (por ejemplo, **Atalaya EQ08 v1.1.0**).
-2. Descarga `centrociber-eq08-win-x64-v1.1.0.zip` o `centrociber-eq08-linux-x64-v1.1.0.zip`.
-3. Opcional: verifica el archivo contra `SHA256SUMS.txt`.
-   - Linux: `sha256sum -c SHA256SUMS.txt --ignore-missing`
-   - Windows: `Get-FileHash .\centrociber-eq08-win-x64-v1.1.0.zip`
-4. Descomprímelo en una carpeta propia, por ejemplo `C:\Atalaya` o `~/atalaya`.
-5. En Linux, da permiso de ejecución: `chmod +x CentroCiber.Web`.
+Entra a la página de *Releases* del repositorio y abre la última versión (por ejemplo, **Atalaya EQ08 v1.1.0**). Las descargas son **autocontenidas**: no necesitan .NET instalado. Opcionalmente, verifica la descarga contra `SHA256SUMS.txt`.
 
-Es **autocontenido**: no necesita .NET instalado. También se puede descargar el artefacto de la última ejecución de la CI (pestaña *Actions*).
+- Linux: `sha256sum -c SHA256SUMS.txt --ignore-missing`
+- Windows: `Get-FileHash <archivo>`
+
+**Windows**
+
+1. Descarga `centrociber-eq08-win-x64-v1.1.0.zip` y descomprímelo en una carpeta propia, por ejemplo `C:\Atalaya`.
+2. Abre el firewall (sección 4).
+3. Ejecuta **`Iniciar-Atalaya.cmd`**. Pide la contraseña del certificado sin mostrarla, salvo que ya exista `CC_PFX_PASSWORD`, abre el navegador en `http://localhost:5008` y arranca el nodo. Los datos quedan en `data\`, junto al programa.
+
+**Linux (AppImage)**
+
+1. Descarga `Atalaya-EQ08-v1.1.0-x86_64.AppImage`.
+2. Dale permiso de ejecución:
+
+   ```bash
+   chmod +x Atalaya-EQ08-v1.1.0-x86_64.AppImage
+   ```
+
+3. Ejecútala desde una terminal (pide la contraseña si no existe `CC_PFX_PASSWORD`):
+
+   ```bash
+   ./Atalaya-EQ08-v1.1.0-x86_64.AppImage
+   ```
+
+4. Los datos (BD, `identidad.pfx`, paquetes) se guardan en `~/.local/share/atalaya-eq08`, porque la AppImage es de solo lectura. Para usar otra carpeta, define `CC_Node__DataPath`.
+5. Si tu distribución no tiene FUSE 2 (error «dlopen(): error loading libfuse.so.2»), instala `libfuse2` (Ubuntu/Debian: `sudo apt install libfuse2t64` o `libfuse2`) o ejecútala con `--appimage-extract-and-run`.
+
+También se pueden descargar los artefactos de la última ejecución de la CI (pestaña *Actions*).
 
 ### Opción B — publicarlo tú
 

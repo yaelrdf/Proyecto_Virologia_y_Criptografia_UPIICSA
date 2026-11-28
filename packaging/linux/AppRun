@@ -1,0 +1,24 @@
+#!/bin/sh
+# Lanzador de la AppImage de Atalaya EQ08 (Linux).
+# La AppImage se monta de solo lectura: los datos (BD, PFX, paquetes) van a ~/.local/share/atalaya-eq08.
+HERE="$(dirname "$(readlink -f "$0")")"
+APP="$HERE/usr/lib/atalaya-eq08"
+export CC_Node__DataPath="${CC_Node__DataPath:-${XDG_DATA_HOME:-$HOME/.local/share}/atalaya-eq08}"
+mkdir -p "$CC_Node__DataPath"
+
+if [ -z "$CC_PFX_PASSWORD" ]; then
+  if [ -t 0 ]; then
+    printf 'Contraseña del certificado (CC_PFX_PASSWORD): '
+    stty -echo 2>/dev/null
+    read -r CC_PFX_PASSWORD
+    stty echo 2>/dev/null
+    printf '\n'
+    export CC_PFX_PASSWORD
+  else
+    echo "Define la contraseña del certificado: CC_PFX_PASSWORD='...' $0" >&2
+    exit 1
+  fi
+fi
+
+echo "Atalaya EQ08: http://localhost:5008  ·  datos en $CC_Node__DataPath  (Ctrl+C para detener)"
+exec "$APP/CentroCiber.Web" --contentRoot "$APP" "$@"

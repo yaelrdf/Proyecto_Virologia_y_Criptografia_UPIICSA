@@ -42,32 +42,52 @@ jobs:
       - run: dotnet test CentroCiber.slnx -c Release --no-build
       - run: python -m pytest tests/interop -q
 
-  publish:
-    name: Publicar ${{ matrix.rid }}
+  windows:
+    name: Windows (.zip portable)
     needs: test
-    strategy:
-      matrix:
-        include:
-          - rid: linux-x64
-            os: ubuntu-latest
-          - rid: win-x64
-            os: windows-latest
-    runs-on: ${{ matrix.os }}
+    runs-on: windows-latest
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-dotnet@v4
         with:
           dotnet-version: "10.0.x"
-      - name: dotnet publish
-        run: dotnet publish src/CentroCiber.Web/CentroCiber.Web.csproj -c Release -r ${{ matrix.rid }} --self-contained true -p:PublishSingleFile=false -o publish/centrociber-eq08-${{ matrix.rid }}
+      - name: dotnet publish win-x64
+        run: dotnet publish src/CentroCiber.Web/CentroCiber.Web.csproj -c Release -r win-x64 --self-contained true -p:PublishSingleFile=false -o publish/centrociber-eq08-win-x64
+      - name: Lanzador
+        run: Copy-Item packaging/windows/Iniciar-Atalaya.cmd publish/centrociber-eq08-win-x64/
       - uses: actions/upload-artifact@v4
         with:
-          name: centrociber-eq08-${{ matrix.rid }}
-          path: publish/centrociber-eq08-${{ matrix.rid }}
+          name: centrociber-eq08-win-x64
+          path: publish/centrociber-eq08-win-x64
+
+  appimage:
+    name: Linux (AppImage)
+    needs: test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "10.0.x"
+      - name: Construir AppImage
+        run: scripts/build-appimage.sh "${TAG}" "${GITHUB_WORKSPACE}/appimage"
+      - name: Probar la AppImage (arranque y /api/status)
+        run: |
+          chmod +x appimage/*.AppImage
+          export HOME="$RUNNER_TEMP/home" CC_PFX_PASSWORD=ci CC_Node__Discovery__Enabled=false
+          ./appimage/*.AppImage --appimage-extract-and-run > "$RUNNER_TEMP/app.log" 2>&1 &
+          for i in $(seq 1 30); do curl -fs http://127.0.0.1:5008/api/status && break; sleep 1; done
+          curl -fs http://127.0.0.1:5008/api/status | grep -q '"nodeId":"EQ08"' || { cat "$RUNNER_TEMP/app.log"; exit 1; }
+          curl -fs -o /dev/null http://127.0.0.1:5008/app.css
+          pkill -f CentroCiber.Web || true
+      - uses: actions/upload-artifact@v4
+        with:
+          name: appimage
+          path: appimage/*.AppImage
 
   release:
     name: Crear GitHub Release
-    needs: publish
+    needs: [windows, appimage]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -77,8 +97,9 @@ jobs:
       - name: Empaquetar zips
         run: |
           cd dist
-          for d in centrociber-eq08-*; do (cd "$d" && zip -qr "../${d}-${TAG}.zip" .); done
-          sha256sum *.zip > SHA256SUMS.txt
+          (cd centrociber-eq08-win-x64 && zip -qr "../centrociber-eq08-win-x64-${TAG}.zip" .)
+          mv appimage/*.AppImage .
+          sha256sum *.zip *.AppImage > SHA256SUMS.txt
           ls -la
       - name: Notas desde el CHANGELOG
         run: |
@@ -89,7 +110,7 @@ jobs:
             on {print}
           ' CHANGELOG.md > notes.md
           if [ ! -s notes.md ]; then echo "Versión $version del nodo EQ08 (Atalaya)." > notes.md; fi
-          printf '\n\nBinarios autocontenidos: no requieren .NET instalado. Define `CC_PFX_PASSWORD` antes de ejecutar (ver el Manual de instalación).\n' >> notes.md
+          printf '\n\n## Descargas\n\n- **Windows**: `centrociber-eq08-win-x64-%s.zip`. Descomprime y ejecuta `Iniciar-Atalaya.cmd`.\n- **Linux**: `Atalaya-EQ08-%s-x86_64.AppImage`. `chmod +x` y ejecútala; los datos quedan en `~/.local/share/atalaya-eq08`.\n\nAutocontenidos: no requieren .NET instalado. Abre en el firewall TCP 5008/5108 y UDP 5099 (ver el Manual de instalación).\n' "$TAG" "$TAG" >> notes.md
       - uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ env.TAG }}
@@ -98,4 +119,5 @@ jobs:
           body_path: notes.md
           files: |
             dist/*.zip
+            dist/*.AppImage
             dist/SHA256SUMS.txt

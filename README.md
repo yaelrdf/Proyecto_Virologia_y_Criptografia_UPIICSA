@@ -43,10 +43,10 @@ Hay más detalle en el [Manual técnico](docs/manuales/Manual_Tecnico.md).
 
 ## Releases
 
-Cada versión se publica como [GitHub Release](https://github.com/yaelrdf/Proyecto_Virologia_y_Criptografia_UPIICSA/releases) con dos binarios autocontenidos, que no necesitan .NET instalado, y su `SHA256SUMS.txt`:
+Cada versión se publica como [GitHub Release](https://github.com/yaelrdf/Proyecto_Virologia_y_Criptografia_UPIICSA/releases) con dos descargas autocontenidas, que no necesitan .NET instalado, y su `SHA256SUMS.txt`:
 
-- `centrociber-eq08-win-x64-vX.Y.Z.zip`
-- `centrociber-eq08-linux-x64-vX.Y.Z.zip`
+- **Windows**: `centrociber-eq08-win-x64-vX.Y.Z.zip`. Descomprime y ejecuta `Iniciar-Atalaya.cmd`.
+- **Linux**: `Atalaya-EQ08-vX.Y.Z-x86_64.AppImage`. Dale permiso con `chmod +x` y ejecútala.
 
 La publicación la hace el workflow [`release.yml`](.github/workflows/release.yml), de una de dos formas:
 
