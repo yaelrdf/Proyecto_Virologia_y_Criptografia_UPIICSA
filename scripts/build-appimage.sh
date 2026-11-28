@@ -1,13 +1,13 @@
 #!/usr/bin/env bash
 # Construye la AppImage de Linux: scripts/build-appimage.sh [versión] [carpeta-salida]
-# Requiere .NET SDK 10 y acceso a GitHub para descargar appimagetool.
+# Requiere .NET SDK 10, desktop-file-utils (desktop-file-validate) y acceso a GitHub para descargar appimagetool.
 set -euo pipefail
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 VERSION="${1:-dev}"
 OUT="${2:-$ROOT/publish}"
 WORK="$(mktemp -d)"
 APPDIR="$WORK/AppDir"
-TOOL_VERSION="1.9.0"
+TOOL_VERSION="1.9.1"
 
 echo "[appimage] Publicando linux-x64 autocontenido..."
 dotnet publish "$ROOT/src/CentroCiber.Web/CentroCiber.Web.csproj" -c Release -r linux-x64 --self-contained true \
